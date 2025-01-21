@@ -22,7 +22,7 @@
     "postinstall": "electron-builder install-app-deps"
   },
   "build": {
-    "productName": "Arbimon Uploader",
+    "productName": "Arbimon.Uploader",
     "appId": "org.rfcx.ingest",
     "afterSign": "./after-sign-hook.js",
     "directories": {
@@ -48,7 +48,9 @@
       ]
     },
     "mac": {
+      "identity": "Rainforest Connection (TWEGNU8HTW)",
       "icon": "build/icons/ingest-mac.png",
+      "category": "public.app-category.utilities",
       "provisioningProfile": "Ingest.provisionprofile",
       "darkModeSupport": true,
       "hardenedRuntime": true,
