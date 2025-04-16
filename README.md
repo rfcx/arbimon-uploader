@@ -57,7 +57,7 @@ Check the script in `.github/workflows/electron.yml` to see how it works.
 * `~/private_keys`
 * `~/.private_keys`
 * `~/.appstoreconnect/private_keys`
-Based on the `API Key ID`, `altool` will look in the above places for the API Key file.
+Based on the `API Key ID`, `notarytool` will look in the above places for the API Key file.
 3. Add the following to the `.env` file:
 APPLE_API_KEY_ID=**API Key ID**
 APPLE_API_KEY_ISSUER_ID=**API Key Issuer ID**

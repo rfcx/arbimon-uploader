@@ -1,3 +1,17 @@
+<a name="1.5.14"></a>
+## 1.5.14 (2025-04-19)
+
+### Improvements
+
+* Fix getting a timezone from the file metadata
+
+<a name="1.5.13"></a>
+## 1.5.13 (2025-01-21)
+
+### Improvements
+
+* Fix Apple certificate issue
+
 <a name="1.5.12"></a>
 ## 1.5.12 (2024-09-16)
 
