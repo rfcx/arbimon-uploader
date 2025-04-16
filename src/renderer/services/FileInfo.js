@@ -53,16 +53,17 @@ export default class FileInfo {
   }
 
   get timezoneOffset () {
-    // File comment contains: ...UTC-02:30...
-    const reg = /((?<prefix>UTC)(?<symbol>[+-])?(?<hour>\d{1,2})?(:)?(?<min>[0-5][0-9])?)/ig
+    // File comment contains: ...UTC-02:30 OR Timestamp:2025-04-14T09:30:00+01:00
+    const reg = /((?<prefix>UTC)(?<tzsymbol>[+-])?(?<tzhour>\d{1,2})?(:)?(?<tzmin>[0-5][0-9])?)/ig
+    const reg2 = /Timestamp:(?<year>[1-9][0-9][0-9][0-9])-(?<month>[0-1][0-9])-(?<day>[0-3][0-9])T(?<hour>[0-2][0-9]):(?<min>[0-5][0-9]):(?<sec>[0-5][0-9])(?<tzsymbol>[+-])?(?<tzhour>\d{1,2})?(:)?(?<tzmin>[0-5][0-9])?/ig
     try {
-      const matched = reg.exec(this.comment)
+      const matched = reg.exec(this.comment) || reg2.exec(this.comment)
       if (!matched || matched.length === 0) {
         return null
       }
-      const symbol = ((matched.groups.symbol || '') === '-') ? -1 : 1
-      const hour = (parseFloat(matched.groups.hour) || 0) * 60
-      const min = (parseFloat(matched.groups.min) || 0)
+      const symbol = ((matched.groups.tzsymbol || '') === '-') ? -1 : 1
+      const hour = (parseFloat(matched.groups.tzhour) || 0) * 60
+      const min = (parseFloat(matched.groups.tzmin) || 0)
       const total = (hour + min) * symbol
       return total
     } catch (e) {
