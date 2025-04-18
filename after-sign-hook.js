@@ -21,7 +21,8 @@ module.exports = async function (params) {
       appBundleId: appId,
       appPath: appPath,
       appleApiKey: process.env.APPLE_API_KEY_ID,
-      appleApiIssuer: process.env.APPLE_API_KEY_ISSUER_ID
+      appleApiIssuer: process.env.APPLE_API_KEY_ISSUER_ID,
+      tool: 'notarytool'
     })
   } catch (error) {
     console.error('Error notarizing', error)
