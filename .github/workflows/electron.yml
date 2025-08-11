@@ -14,15 +14,12 @@ jobs:
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v4
-      - uses: microsoft/setup-msbuild@v2
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 14
-          check-latest: true
-      - name: Enable Node-Gyp for Windows
-        run: |
-          npm config set msvs_version 2022
+          node-version: 16
+      - run: npm install --global windows-build-tools@4.0.0 --msvs_version=2022
+        shell: pwsh
       - name: Clean cache
         run: |
             npm cache clean -force
@@ -43,7 +40,6 @@ jobs:
           build_script_name: build:ci
           max_attempts: 10
         env:
-          msvs_version: 2022
           appleId: ${{ secrets.APPLE_ID }}
           appleIdPassword: ${{ secrets.APPLE_ID_PWD }},
           API_KEY_ID: ${{ secrets.API_KEY_ID }},
