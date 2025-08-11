@@ -43,6 +43,7 @@ jobs:
           build_script_name: build:ci
           max_attempts: 10
         env:
+          msvs_version: 2022
           appleId: ${{ secrets.APPLE_ID }}
           appleIdPassword: ${{ secrets.APPLE_ID_PWD }},
           API_KEY_ID: ${{ secrets.API_KEY_ID }},
