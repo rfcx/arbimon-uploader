@@ -18,10 +18,9 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 14.14.0
-      - name: Install build tools
-        run: npm install --global --production windows-build-tools@4.0.0 --vs2019
-        shell: powershell
-      - name: Install dependencies
+      - name: Set msvs_version
+        run: npm config set msvs_version 2022
+      - name: Install deps
         run: npm install
       - name: Clean cache
         run: |
