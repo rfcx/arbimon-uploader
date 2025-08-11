@@ -14,10 +14,15 @@ jobs:
     steps:
       - name: Check out Git repository
         uses: actions/checkout@master
-      - name: Install Node.js, NPM and Yarn
+      - name: Setup Node.js
         uses: actions/setup-node@v1
         with:
           node-version: 14.14.0
+      - name: Install build tools
+        run: npm install --global --production windows-build-tools@4.0.0 --vs2019
+        shell: powershell
+      - name: Install dependencies
+        run: npm install
       - name: Clean cache
         run: |
             npm cache clean -force
