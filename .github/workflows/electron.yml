@@ -13,15 +13,18 @@ jobs:
         os: [windows-2022]
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@master
+        uses: actions/checkout@v4
       - name: Setup Node.js
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v4
         with:
           node-version: 14.14.0
+      - uses: microsoft/setup-msbuild@v1.3.1
+        with:
+          vs-version: '[17.0,18.0)'
       - name: Set msvs_version
         run: npm config set msvs_version 2022
       - name: Install deps
-        run: npm install
+        run: npm install --build-from-source
       - name: Clean cache
         run: |
             npm cache clean -force
