@@ -17,12 +17,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 16
-      - run: npm install --global windows-build-tools@4.0.0 --msvs_version=2022
-        shell: pwsh
-      - name: Clean cache
-        run: |
-            npm cache clean -force
+          node-version: 14
+      - name: Set npm MSVS version
+        run: npm config set msvs_version 2022
+      - name: Install & build with VC++ environment
+        shell: cmd
+        run: call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
       - name: Prepare for app notarization (macOS)
         if: startsWith(matrix.os, 'macos')
         run: |
