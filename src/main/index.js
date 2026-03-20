@@ -19,7 +19,8 @@ log.transports.file.getFile()
  * Set `__static` path to static files in production
  * https://simulatedgreg.gitbooks.io/electron-vue/content/en/using-static-assets.html
  */
-
+// Fix Load Tokens error: unable to get local issuer certificate
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 if (process.env.NODE_ENV !== 'development') {
   global.__static = path.join(__dirname, '/static').replace(/\\/g, '\\\\')
 }
