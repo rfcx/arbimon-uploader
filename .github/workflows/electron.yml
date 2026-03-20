@@ -17,12 +17,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 14
-      - name: Set npm MSVS version
-        run: npm config set msvs_version 2019
-      - name: Install & build with VC++ environment
-        shell: cmd
-        run: call "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" x64
+          node-version: 18
       - name: Prepare for app notarization (macOS)
         if: startsWith(matrix.os, 'macos')
         run: |
@@ -41,7 +36,7 @@ jobs:
           max_attempts: 10
         env:
           appleId: ${{ secrets.APPLE_ID }}
-          appleIdPassword: ${{ secrets.APPLE_ID_PWD }},
-          API_KEY_ID: ${{ secrets.API_KEY_ID }},
+          appleIdPassword: ${{ secrets.APPLE_ID_PWD }}
+          API_KEY_ID: ${{ secrets.API_KEY_ID }}
           API_KEY_ISSUER_ID: ${{ secrets.API_KEY_ISSUER_ID }}
-          NODE_OPTIONS: '--max_old_space_size=4096'
+          NODE_OPTIONS: --max_old_space_size=4096
