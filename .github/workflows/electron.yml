@@ -19,10 +19,17 @@ jobs:
         with:
           node-version: 14
           cache: 'npm'
-      - name: Configure node-gyp to use VS2022
-        run: npm config set msvs_version 2022
-      - name: Install dependencies
-        run: npm install --no-optional --legacy-peer-deps
+      - name: Setup Visual Studio Build Tools
+        uses: microsoft/setup-msbuild@v1.3
+      - name: Configure node-gyp
+        run: |
+          npm config set msvs_version 2022
+          npm config set python python
+      - name: Install dependencies (with MSVC environment)
+        shell: cmd
+        run: |
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
+          npm install --no-optional --legacy-peer-deps
       - name: Prepare for app notarization (macOS)
         if: startsWith(matrix.os, 'macos')
         run: |
