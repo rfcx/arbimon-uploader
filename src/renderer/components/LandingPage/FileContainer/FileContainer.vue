@@ -6,6 +6,7 @@
         :queuedGroup="getNumberOfFilesAndStatusToRenderInTab('Queued')"
         :completedGroup="getNumberOfFilesAndStatusToRenderInTab('Completed')"
         :selectedTab="selectedTab"
+        @onSelectTab="onSelectTab"
     ></tab>
     <file-name-format-info
         v-if="selectedTab === 'Prepared' && hasPreparingFiles"
@@ -79,6 +80,7 @@ export default {
       queuedFileCount: 0,
       fetchFilesInterval: null,
       selectedStream: null,
+      currentTab: 'Prepared',
       isFetching: false,
       isFetchingStreamInfo: false
     }
@@ -96,8 +98,13 @@ export default {
       isUploadingProcessEnabled: state => state.AppSetting.isUploadingProcessEnabled
     }),
     selectedTab () {
-      const savedSelectedTab = this.$store.getters.getSelectedTabByStreamId(this.selectedStreamId)
-      return savedSelectedTab || this.getDefaultSelectedTab()
+      return this.currentTab
+    },
+    persistedSelectedTab () {
+      if (!this.selectedStreamId) {
+        return null
+      }
+      return this.$store.getters.getSelectedTabByStreamId(this.selectedStreamId)
     },
     hasPreparingFiles () {
       return this.stats.find(group => FileState.isInPreparedGroup(group.state)) !== undefined
@@ -126,6 +133,22 @@ export default {
         if (this.selectedStream.isCompleted) return 'Completed'
       }
       return 'Prepared'
+    },
+    syncSelectedTab () {
+      const savedSelectedTab = this.selectedStreamId ? this.$store.getters.getSelectedTabByStreamId(this.selectedStreamId) : null
+      this.currentTab = savedSelectedTab || this.getDefaultSelectedTab()
+    },
+    onSelectTab (tab) {
+      this.currentTab = tab
+    },
+    async onFilesChanged () {
+      if (!this.selectedStreamId || this.isFetching) {
+        return
+      }
+
+      await this.getCurrentStream()
+      await this.reloadStats()
+      await this.reloadFiles(this.getQueryBySelectedTab(this.selectedTab), 0)
     },
     async onImportFiles (files) {
       console.info('[FileContainer] onImportFiles', files)
@@ -213,13 +236,13 @@ export default {
     },
     startFilesFetcher () {
       this.clearFilesFetcher() // make sure it's null before setting a new one
-      if (this.files.length <= 0 || !this.isUploading) return // not initial a fetcher when there is no files or when the uploading process is not running
+      if (!this.selectedStreamId) return
+      const refreshInterval = this.isUploading ? 2000 : 5000
       this.fetchFilesInterval = setInterval(async () => {
+        await this.getCurrentStream()
         await this.reloadStats()
-        if (this.selectedTab === 'Prepared') { return }
-        // not reloading files in prepare tab
         await this.reloadFiles(this.getQueryBySelectedTab(this.selectedTab), 0)
-      }, 2000)
+      }, refreshInterval)
     },
     clearFilesFetcher () {
       if (this.fetchFilesInterval) {
@@ -237,6 +260,11 @@ export default {
       this.$emit('onNeedResetStreamList')
     },
     async getCurrentStream () {
+      if (!this.selectedStreamId) {
+        this.selectedStream = null
+        return
+      }
+
       this.selectedStream = await ipcRendererSend('db.streams.get', `db.streams.get.${Date.now()}`, this.selectedStreamId)
     },
     async updateStream () {
@@ -256,6 +284,7 @@ export default {
       handler: async function (newStream, previousStream) {
         if (previousStream === newStream) return
         await this.getCurrentStream()
+        this.syncSelectedTab()
         await this.resetFiles()
       }
     },
@@ -265,23 +294,31 @@ export default {
         await this.resetFiles()
       }
     },
+    persistedSelectedTab: {
+      handler: function (newTabName, previousTabName) {
+        if (!newTabName || previousTabName === newTabName || this.currentTab === newTabName) return
+        this.currentTab = newTabName
+      }
+    },
     isUploading: {
       handler: async function (newValue, previousValue) {
         if (previousValue === newValue) return
-        if (newValue === true) { this.startFilesFetcher() }
-        if (newValue === false || newValue === null) {
-          setTimeout(() => {
-            this.clearFilesFetcher()
-          }, 2000)
-        }
+        this.startFilesFetcher()
       }
     }
   },
   async created () {
-    await this.getCurrentStream()
-    this.initFilesFetcher()
+    try {
+      this.$electron.ipcRenderer.on('db.files.changed', this.onFilesChanged)
+      await this.getCurrentStream()
+      this.syncSelectedTab()
+      this.initFilesFetcher()
+    } catch (error) {
+      console.error('[FileContainer] initialization failed', error)
+    }
   },
   beforeDestroy () {
+    this.$electron.ipcRenderer.removeListener('db.files.changed', this.onFilesChanged)
     this.clearFilesFetcher()
   }
 }

@@ -1,6 +1,8 @@
-import { app } from 'electron'
-import store from '../../../renderer/store'
+import settings from 'electron-settings'
 import dbService from '../../services/db/sqlite'
+const { app } = require('electron')
+
+const STORE_KEY = 'vuex_state'
 
 export default {
   setLoginItem (openAtLogin) {
@@ -14,7 +16,6 @@ export default {
   },
   async clearAllData () {
     await dbService.deleteAllRecords()
-    await store.dispatch('entities/deleteAll')
-    await store.dispatch('reset')
+    settings.delete(STORE_KEY)
   }
 }

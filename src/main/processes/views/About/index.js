@@ -1,4 +1,5 @@
-import { BrowserWindow } from 'electron'
+import { enableRemoteForWindow, getRendererWebPreferences } from '../../../services/window-preferences'
+const { BrowserWindow } = require('electron')
 
 export default {
   createWindow (isShow) {
@@ -12,9 +13,10 @@ export default {
       transparent: false,
       backgroundColor: '#060508',
       titleBarStyle: 'default',
-      webPreferences: { nodeIntegration: true }
+      webPreferences: getRendererWebPreferences()
     })
 
+    enableRemoteForWindow(aboutWindow)
     aboutWindow.loadURL(aboutURL)
     aboutWindow.removeMenu()
 

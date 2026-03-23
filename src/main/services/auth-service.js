@@ -1,8 +1,8 @@
 const jwtDecode = require('jwt-decode')
 const request = require('request')
 const url = require('url')
-const keytar = require('keytar')
 const os = require('os')
+import tokenStore from './token-store'
 
 const { apiIdentifier, auth0Domain, clientId, redirectUri } = require('../../../env').auth0
 
@@ -14,14 +14,14 @@ let refreshToken = null
 
 async function getAccessToken () {
   return new Promise(async (resolve, reject) => {
-    const access = await keytar.getPassword('ingest-app-access-token', keytarAccount)
+    const access = await tokenStore.getPassword('ingest-app-access-token', keytarAccount)
     if (!access) return reject(new Error('no access token available'))
     resolve(access)
   })
 }
 
 async function getIdToken () {
-  return keytar.getPassword('ingest-app-id-token', keytarAccount)
+  return tokenStore.getPassword('ingest-app-id-token', keytarAccount)
 }
 
 function getAuthenticationURL () {
@@ -40,7 +40,7 @@ function getLogoutURL () {
 async function refreshTokens () {
   console.info('[AuthService] refreshTokens')
   return new Promise(async (resolve, reject) => {
-    const refreshToken = await keytar.getPassword('ingest-app-refresh-token', keytarAccount)
+    const refreshToken = await tokenStore.getPassword('ingest-app-refresh-token', keytarAccount)
     if (!refreshToken) return reject(new Error('no refresh token available'))
 
     const refreshOptions = {
@@ -103,7 +103,7 @@ async function loadTokens (callbackURL) {
         return reject(e)
       }
       refreshToken = responseBody.refresh_token
-      await keytar.setPassword('ingest-app-refresh-token', keytarAccount, refreshToken)
+      await tokenStore.setPassword('ingest-app-refresh-token', keytarAccount, refreshToken)
       resolve()
     })
   })
@@ -113,9 +113,9 @@ async function parseTokens (responseBody) {
   let appMetadata = 'https://rfcx.org/app_metadata'
   let userMetadata = 'https://rfcx.org/user_metadata'
   accessToken = responseBody.access_token
-  await keytar.setPassword('ingest-app-access-token', keytarAccount, accessToken)
+  await tokenStore.setPassword('ingest-app-access-token', keytarAccount, accessToken)
   profile = jwtDecode(responseBody.id_token)
-  await keytar.setPassword('ingest-app-id-token', keytarAccount, responseBody.id_token)
+  await tokenStore.setPassword('ingest-app-id-token', keytarAccount, responseBody.id_token)
   if (profile && profile.given_name) {
     global.firstname = profile.given_name
   } else if (profile && profile[userMetadata] && profile[userMetadata].given_name) {
@@ -137,9 +137,9 @@ async function parseTokens (responseBody) {
 }
 
 async function logout () {
-  await keytar.deletePassword('ingest-app-refresh-token', keytarAccount)
-  await keytar.deletePassword('ingest-app-access-token', keytarAccount)
-  await keytar.deletePassword('ingest-app-id-token', keytarAccount)
+  await tokenStore.deletePassword('ingest-app-refresh-token', keytarAccount)
+  await tokenStore.deletePassword('ingest-app-access-token', keytarAccount)
+  await tokenStore.deletePassword('ingest-app-id-token', keytarAccount)
   accessToken = null
   profile = null
   refreshToken = null

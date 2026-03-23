@@ -1,10 +1,9 @@
 import settings from 'electron-settings'
-const { remote } = window.require('electron')
 
 function getAPIUrl () {
   const isProd = settings.get('settings.production_env')
   const platform = settings.get('settings.platform')
-  let url = remote.getGlobal('ingestServicelUrl')
+  let url = global.ingestServicelUrl
   if (url) {
     return url
   }

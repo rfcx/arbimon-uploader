@@ -1,5 +1,5 @@
 import electron from 'electron'
-import settings from 'electron-settings'
+import settings from './settings'
 import api from '../../../utils/api'
 import fileHelper from '../../../utils/fileHelper'
 import dateHelper from '../../../utils/dateHelper'
@@ -9,7 +9,7 @@ import store from '../store'
 import FileInfo from './FileInfo'
 import fs from 'fs'
 import path from 'path'
-import Analytics from 'electron-ga'
+import { createAnalytics } from './analytics'
 import env from '../../../env.json'
 import fileState from '../../../utils/fileState'
 import ipcRendererSend from './ipc'
@@ -18,7 +18,7 @@ import SongMeterFileInfo from './SongMeterFileInfo'
 const { PREPARING, ERROR_LOCAL, ERROR_SERVER, WAITING, PROCESSING, CONVERTING, COMPLETED } = fileState.state
 
 const FORMAT_AUTO_DETECT = FileFormat.fileFormat.AUTO_DETECT
-const analytics = new Analytics(env.analytics.id)
+const analytics = createAnalytics(env.analytics.id)
 
 const extractSongMeterFileInfo = async (file) => {
   if (file.extension !== 'wav') return new SongMeterFileInfo('')
@@ -499,7 +499,15 @@ class FileProvider {
   }
 
   async insertFiles (files) {
-    await ipcRendererSend('db.files.bulkCreate', `db.files.bulkCreate.${Date.now()}`, files)
+    const dedupedFiles = files.filter((file, index, list) => {
+      return list.findIndex((candidate) => candidate.id === file.id || candidate.path === file.path) === index
+    })
+
+    if (dedupedFiles.length <= 0) {
+      return
+    }
+
+    await ipcRendererSend('db.files.bulkCreate', `db.files.bulkCreate.${Date.now()}`, dedupedFiles)
   }
 
   async markFileAsRetryToUpload (file) {

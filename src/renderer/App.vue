@@ -8,7 +8,7 @@
 </template>
 
 <script>
-  import settings from 'electron-settings'
+  import settings from './services/settings'
   import { mapState } from 'vuex'
   const isOnline = require('is-online')
 

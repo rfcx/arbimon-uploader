@@ -1,4 +1,5 @@
-import { BrowserWindow } from 'electron'
+import { enableRemoteForWindow, getRendererWebPreferences } from '../../../services/window-preferences'
+const { BrowserWindow } = require('electron')
 
 export default {
   createWindow (isShow, onCloseHandler, onClosedHandler) {
@@ -11,9 +12,10 @@ export default {
       height: 563,
       minWidth: 400,
       backgroundColor: '#060508',
-      webPreferences: { nodeIntegration: true }
+      webPreferences: getRendererWebPreferences()
     })
 
+    enableRemoteForWindow(mainWindow)
     mainWindow.loadURL(mainWindowURL)
 
     // Monitor process

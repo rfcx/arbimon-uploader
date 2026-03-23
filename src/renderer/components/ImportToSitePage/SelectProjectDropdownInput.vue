@@ -31,7 +31,7 @@ import DropDownWithSearchInput from '../Common/Dropdown/DropdownWithSearchInput'
 import ErrorMessageView from './ErrorMessageView'
 import { faSync } from '@fortawesome/free-solid-svg-icons'
 import api from '../../../../utils/api'
-import settings from 'electron-settings'
+import settings from '../../services/settings'
 import ipcRendererSend from '../../services/ipc'
 export default {
   data () {

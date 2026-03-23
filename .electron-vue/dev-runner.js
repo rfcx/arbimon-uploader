@@ -16,6 +16,21 @@ let electronProcess = null
 let manualRestart = false
 let hotMiddleware
 
+function getElectronEnv () {
+  const env = { ...process.env }
+  const nodeOptions = (env.NODE_OPTIONS || '')
+    .split(/\s+/)
+    .filter(option => option && option !== '--openssl-legacy-provider')
+    .join(' ')
+
+  if (nodeOptions) env.NODE_OPTIONS = nodeOptions
+  else delete env.NODE_OPTIONS
+
+  delete env.ELECTRON_RUN_AS_NODE
+
+  return env
+}
+
 function logStats (proc, data) {
   let log = ''
 
@@ -114,10 +129,11 @@ function startMain () {
 }
 
 function startElectron () {
-  var args = [
-    '--inspect=5858',
-    path.join(__dirname, '../dist/electron/main.js')
-  ]
+  var args = [path.join(__dirname, '../dist/electron/main.js')]
+
+  if (process.env.ELECTRON_INSPECT === '1') {
+    args.unshift('--inspect=5858')
+  }
 
   // detect yarn or npm and process commandline args accordingly
   if (process.env.npm_execpath.endsWith('yarn.js')) {
@@ -126,7 +142,9 @@ function startElectron () {
     args = args.concat(process.argv.slice(2))
   }
 
-  electronProcess = spawn(electron, args)
+  electronProcess = spawn(electron, args, {
+    env: getElectronEnv()
+  })
 
   electronProcess.stdout.on('data', data => {
     electronLog(data, 'blue')

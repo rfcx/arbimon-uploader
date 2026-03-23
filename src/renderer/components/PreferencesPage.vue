@@ -21,7 +21,7 @@
 </template>
 
 <script>
-  import settings from 'electron-settings'
+  import settings from '../services/settings'
   import AboutPage from './AboutPage'
 
   export default {

@@ -1,9 +1,10 @@
 import fileHelper from './fileHelper'
 import fileState from './fileState'
 import errors from './errors'
-import Analytics from 'electron-ga'
-import settings from 'electron-settings'
+import { createAnalytics } from '../src/renderer/services/analytics'
+import settings from '../src/renderer/services/settings'
 import ipcRendererSend from '../src/renderer/services/ipc'
+import remote from '../src/renderer/services/remote'
 
 const { CONVERTING, UPLOADING } = fileState.state
 
@@ -13,7 +14,6 @@ const fileStreamAxios = axios.create({
 })
 const httpClient = axios.create()
 httpClient.defaults.timeout = 30000
-const { remote } = window.require('electron')
 const env = require('../env.json')
 
 const apiUrl = (proEnvironment) => {
@@ -36,7 +36,7 @@ const arbimonWebUrl = (isProd, streamId = null) => {
 
 const uploadFile = async (environment, fileId, fileName, filePath, fileExt, streamId, timestamp, duration, fileSize, idToken, metadata, progressCallback) => {
   const now = Date.now()
-  const analytics = new Analytics(env.analytics.id)
+  const analytics = createAnalytics(env.analytics.id)
   console.log(`===> upload file ${fileName}`)
   let isConverted = false
   let uploadFilePath = filePath

@@ -1,10 +1,10 @@
-import { app, Menu, shell, dialog, BrowserWindow } from 'electron'
 import settings from 'electron-settings'
 import sharedProcess from '../shared/index'
 import sharedMenu from './shared'
 import log from 'electron-log'
 import fileHelper from '../../../../utils/fileHelper'
 import env from '../../../../env.json'
+const { app, Menu, shell, dialog, BrowserWindow } = require('electron')
 
 function createMenu (clearDataFunction, logoutFunction, preferenceFunction, aboutFunction, updateFunction) {
   /* MENU */

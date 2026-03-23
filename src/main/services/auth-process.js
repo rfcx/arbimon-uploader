@@ -1,13 +1,84 @@
-import { BrowserWindow, Menu, app } from 'electron'
 import authService from './auth-service'
 import index from '../index'
 import settings from 'electron-settings'
+const { BrowserWindow, Menu, app } = require('electron')
+const http = require('http')
+const { redirectUri } = require('../../../env').auth0
 
-const filter = {
-  urls: ['file:///callback*']
-}
+const redirectURL = new URL(redirectUri)
 let win = null
 let menu, currentUrl
+let isHandlingAuthCallback = false
+let authCallbackServer = null
+
+function isCallbackURL (targetUrl) {
+  return targetUrl && targetUrl.startsWith(redirectUri)
+}
+
+async function handleAuthCallback (targetUrl) {
+  if (isHandlingAuthCallback) return
+
+  isHandlingAuthCallback = true
+
+  try {
+    await authService.loadTokens(targetUrl)
+    global.firstLogIn = true
+    index.createWindow(false)
+    await destroyAuthWin()
+  } catch (error) {
+    console.info('[AuthWindow] token exchange failed', error)
+    await index.createLogoutWindow()
+  } finally {
+    isHandlingAuthCallback = false
+  }
+}
+
+function startAuthCallbackServer () {
+  if (authCallbackServer && authCallbackServer.listening) {
+    return Promise.resolve()
+  }
+
+  return new Promise((resolve, reject) => {
+    const callbackPath = redirectURL.pathname
+
+    authCallbackServer = http.createServer((req, res) => {
+      const requestUrl = new URL(req.url, redirectUri)
+
+      if (requestUrl.pathname !== callbackPath) {
+        res.writeHead(404, { 'Content-Type': 'text/plain' })
+        res.end('Not found')
+        return
+      }
+
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
+      res.end('<html><body style="font-family: sans-serif; text-align: center; padding-top: 40px;">Login complete. You can close this window.</body></html>')
+
+      handleAuthCallback(requestUrl.toString())
+    })
+
+    authCallbackServer.once('error', (error) => {
+      authCallbackServer = null
+      reject(error)
+    })
+
+    authCallbackServer.listen(Number(redirectURL.port), redirectURL.hostname, () => {
+      resolve()
+    })
+  })
+}
+
+function stopAuthCallbackServer () {
+  return new Promise((resolve) => {
+    if (!authCallbackServer) {
+      resolve()
+      return
+    }
+
+    const server = authCallbackServer
+    authCallbackServer = null
+    server.close(() => resolve())
+  })
+}
 
 function createAuthWindow () {
   console.info('[AuthWindow] create')
@@ -20,21 +91,26 @@ function createAuthWindow () {
       nodeIntegration: false
     }
   })
-  const {
-    session: { webRequest }
-  } = win.webContents
-  win.loadURL(authService.getAuthenticationURL(), { userAgent: 'Chrome' })
-  currentUrl = authService.getAuthenticationURL()
-  webRequest.onBeforeRequest(filter, async ({ url }) => {
-    try {
-      await authService.loadTokens(url)
-    } catch (e) {
-      // Set a universal login page if the load tokens issue occurs
-      index.createLogoutWindow()
-    }
-    index.createWindow(false)
-    global.firstLogIn = true
-    await destroyAuthWin()
+  startAuthCallbackServer()
+    .then(() => {
+      win.loadURL(authService.getAuthenticationURL(), { userAgent: 'Chrome' })
+      currentUrl = authService.getAuthenticationURL()
+    })
+    .catch(async (error) => {
+      console.info('[AuthWindow] failed to start callback server', error)
+      await destroyAuthWin()
+    })
+
+  win.webContents.on('will-redirect', (event, targetUrl) => {
+    if (!isCallbackURL(targetUrl)) return
+    event.preventDefault()
+    handleAuthCallback(targetUrl)
+  })
+
+  win.webContents.on('will-navigate', (event, targetUrl) => {
+    if (!isCallbackURL(targetUrl)) return
+    event.preventDefault()
+    handleAuthCallback(targetUrl)
   })
   // win.webContents.once('dom-ready', () => win.webContents.openDevTools())
   win.webContents.on('did-finish-load', () => {
@@ -80,9 +156,15 @@ function createAuthWindow () {
   })
   win.on('closed', () => {
     win = null
+    isHandlingAuthCallback = false
+    stopAuthCallbackServer()
     console.info('[AuthWindow] closed')
   })
   win.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL, isMainFrame) => {
+    if (errorCode === -3 || errorDescription === 'ERR_ABORTED') {
+      return
+    }
+
     if (errorDescription === 'ERR_INTERNET_DISCONNECTED') {
       let code = `body = document.getElementsByTagName('body')[0]
       if (body) {
@@ -113,8 +195,9 @@ function createAuthWindow () {
 }
 
 function destroyAuthWin () {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     if (!win) return resolve()
+    await stopAuthCallbackServer()
     win.close()
     resolve()
   })

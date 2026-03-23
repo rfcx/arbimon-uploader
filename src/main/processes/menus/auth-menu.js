@@ -1,7 +1,7 @@
-import { Menu } from 'electron'
 import settings from 'electron-settings'
 import sharedProcess from '../shared/index'
 import sharedMenu from './shared'
+const { Menu } = require('electron')
 
 function createMenu (backToLogInFunction, quitFunction) {
   /* MENU */

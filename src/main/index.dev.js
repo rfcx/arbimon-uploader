@@ -7,8 +7,14 @@
 
 /* eslint-disable */
 
-// Install `electron-debug` with `devtron`
-require('electron-debug')({ showDevTools: true })
+// Older electron-debug releases are not reliable on modern Electron.
+if (process.env.ELECTRON_DEBUG === '1' && process.versions && process.versions.electron) {
+  try {
+    require('electron-debug')({ showDevTools: true })
+  } catch (error) {
+    console.warn('electron-debug failed to initialize', error)
+  }
+}
 
 // Require `main` process to boot app
 require('./index')

@@ -177,6 +177,7 @@ export default {
       tabObject[this.selectedStreamId] = 'Queued'
       await this.$store.dispatch('setSelectedTab', tabObject)
 
+      this.$emit('onNeedResetFileList')
       this.$emit('onNeedResetStreamList')
 
       // always enable uploading process

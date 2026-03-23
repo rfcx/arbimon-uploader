@@ -1,6 +1,7 @@
-import { app, ipcMain, BrowserWindow, autoUpdater } from 'electron'
 import settings from 'electron-settings'
+import { enableRemoteForWindow, getRendererWebPreferences } from '../../../services/window-preferences'
 const os = require('os')
+const { app, ipcMain, BrowserWindow, autoUpdater } = require('electron')
 
 let updateIntervalTimeout
 let dayInMs = 60 * 60 * 24 * 1000
@@ -16,9 +17,10 @@ export default {
       transparent: false,
       backgroundColor: '#060508',
       titleBarStyle: 'default',
-      webPreferences: { nodeIntegration: true }
+      webPreferences: getRendererWebPreferences()
     })
 
+    enableRemoteForWindow(updatePopupWindow)
     updatePopupWindow.removeMenu()
     updatePopupWindow.loadURL(updateURL)
 

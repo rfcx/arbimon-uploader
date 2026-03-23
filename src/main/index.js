@@ -1,15 +1,16 @@
 'use strict'
 
-import { app, ipcMain, BrowserWindow } from 'electron'
 import { commonProcess, mainProcess, backgroundProcess, dbProcess, menuProcess, aboutProcess, preferenceProcess, updateProcess } from './processes'
 import settings from 'electron-settings'
 import createAuthWindow from './services/auth-process'
 import authService from './services/auth-service'
 import sharedProcess from './processes/shared'
+const { app, ipcMain, BrowserWindow, session } = require('electron')
 const path = require('path')
 const jwtDecode = require('jwt-decode')
 const setupEvents = require('./../../setupEvents')
 const log = require('electron-log')
+const remoteMain = require('@electron/remote/main')
 console.log = log.log
 console.info = log.info
 log.transports.console.format = '{h}:{i}:{s} {text}'
@@ -32,6 +33,8 @@ let isLogOut = false
 let dayInMs = 60 * 60 * 24 * 1000
 // let weekInMs = dayInMs * 7
 const gotTheLock = app.requestSingleInstanceLock()
+
+remoteMain.initialize()
 
 function createWindow (openedAsHidden = false) {
   createRefreshInterval()
@@ -375,7 +378,7 @@ app.on('ready', async () => {
         os.homedir(),
         '/Library/Application Support/Google/Chrome/Profile 2/Extensions/nhdogjmejiglipccpnnnanhbledajbpd/5.3.4_0'
       )
-      await BrowserWindow.addDevToolsExtension(devToolsPath)
+      await session.defaultSession.loadExtension(devToolsPath)
     } catch (e) {
       console.error('Can not init vue dev tools', e)
     }
@@ -458,6 +461,10 @@ ipcMain.on('client.message', function (event, data) {
   if (client) {
     client.webContents.send(data.topic, data.content)
   }
+})
+
+ipcMain.on('renderer.error', (event, data) => {
+  console.error('[RendererError]', data)
 })
 // ipcMain.on('getFileDurationRequest', async function (event, files) {
 //   console.log('getFileDurationRequest')

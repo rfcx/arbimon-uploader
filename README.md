@@ -12,10 +12,10 @@
 
 ### Requirements
 
-- Node 14 (tested on 14.18.2)
+- Node 24 LTS
 
 Additional requirements for Windows
-- Visual Studio **2017** along with Desktop development with C++
+- Visual Studio **2022** along with Desktop development with C++
 
 ### Start development environment
 
@@ -122,4 +122,3 @@ With electron-vue, we are using vue components to make our large complex applica
 
 ## Main process
 `src/main/index.js` file is the app’s main file, the file in which electron boots with.
-

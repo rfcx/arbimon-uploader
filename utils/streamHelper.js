@@ -1,6 +1,6 @@
 import dateHelper from './dateHelper'
 import FileState from './fileState'
-import settings from 'electron-settings'
+import settings from '../src/renderer/services/settings'
 const { PREPARING, ERROR_SERVER, UPLOADING, PROCESSING, COMPLETED } = FileState.state
 
 const getNameError = (streamName) => {

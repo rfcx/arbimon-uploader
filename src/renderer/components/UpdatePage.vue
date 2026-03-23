@@ -19,7 +19,7 @@
 
 <script>
   import VueMarkdown from 'vue-markdown'
-  const { remote } = window.require('electron')
+  import remote from '../services/remote'
 
   export default {
     data () {

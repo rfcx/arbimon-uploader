@@ -2,7 +2,7 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import VuexORM from '@vuex-orm/core'
 import modules from './modules'
-import { createPersistedState, createSharedMutations } from 'vuex-electron'
+import { createPersistedState, createSharedMutations } from './plugins/persistence'
 
 Vue.use(Vuex)
 

@@ -5,11 +5,11 @@ process.env.BABEL_ENV = 'web'
 const path = require('path')
 const webpack = require('webpack')
 
-const BabiliWebpackPlugin = require('babili-webpack-plugin')
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const { VueLoaderPlugin } = require('vue-loader')
+const sass = require('sass')
 
 let webConfig = {
   devtool: '#cheap-module-eval-source-map',
@@ -19,23 +19,23 @@ let webConfig = {
   module: {
     rules: [
       {
-        test: /\.(js|vue)$/,
-        enforce: 'pre',
-        exclude: /node_modules/,
-        use: {
-          loader: 'eslint-loader',
-          options: {
-            formatter: require('eslint-friendly-formatter')
-          }
-        }
-      },
-      {
         test: /\.scss$/,
-        use: ['vue-style-loader', 'css-loader', 'sass-loader']
+        use: ['vue-style-loader', 'css-loader', {
+          loader: 'sass-loader',
+          options: {
+            implementation: sass
+          }
+        }]
       },
       {
         test: /\.sass$/,
-        use: ['vue-style-loader', 'css-loader', 'sass-loader?indentedSyntax']
+        use: ['vue-style-loader', 'css-loader', {
+          loader: 'sass-loader',
+          options: {
+            implementation: sass,
+            indentedSyntax: true
+          }
+        }]
       },
       {
         test: /\.less$/,
@@ -62,8 +62,27 @@ let webConfig = {
           options: {
             extractCSS: true,
             loaders: {
-              sass: 'vue-style-loader!css-loader!sass-loader?indentedSyntax=1',
-              scss: 'vue-style-loader!css-loader!sass-loader',
+              sass: [
+                'vue-style-loader',
+                'css-loader',
+                {
+                  loader: 'sass-loader',
+                  options: {
+                    implementation: sass,
+                    indentedSyntax: true
+                  }
+                }
+              ],
+              scss: [
+                'vue-style-loader',
+                'css-loader',
+                {
+                  loader: 'sass-loader',
+                  options: {
+                    implementation: sass
+                  }
+                }
+              ],
               less: 'vue-style-loader!css-loader!less-loader'
             }
           }
@@ -112,6 +131,7 @@ let webConfig = {
   ],
   output: {
     filename: '[name].js',
+    hashFunction: 'sha256',
     path: path.join(__dirname, '../dist/web')
   },
   resolve: {
@@ -132,7 +152,6 @@ if (process.env.NODE_ENV === 'production') {
   webConfig.devtool = ''
 
   webConfig.plugins.push(
-    new BabiliWebpackPlugin(),
     new CopyWebpackPlugin([
       {
         from: path.join(__dirname, '../static'),

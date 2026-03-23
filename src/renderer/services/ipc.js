@@ -15,6 +15,12 @@ export default function (topic, callbackTopic, data, timeout = 60000) {
       if (response instanceof Error) {
         return reject(response)
       }
+      if (response && typeof response === 'object' && typeof response.message === 'string' && ('stack' in response || 'code' in response)) {
+        const error = new Error(response.message)
+        if (response.stack) error.stack = response.stack
+        if (response.code) error.code = response.code
+        return reject(error)
+      }
       resolve(response)
     }
     electron.ipcRenderer.once(callbackTopic, listener)

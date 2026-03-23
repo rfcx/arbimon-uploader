@@ -1,6 +1,7 @@
-import { BrowserWindow, ipcMain } from 'electron'
 import settings from 'electron-settings'
 import updateProcess from '../Update/index'
+import { enableRemoteForWindow, getRendererWebPreferences } from '../../../services/window-preferences'
+const { BrowserWindow, ipcMain } = require('electron')
 
 export default {
   createWindow (isShow) {
@@ -15,9 +16,10 @@ export default {
       title: 'SETTINGS',
       backgroundColor: '#060508',
       titleBarStyle: 'default',
-      webPreferences: { nodeIntegration: true }
+      webPreferences: getRendererWebPreferences()
     })
 
+    enableRemoteForWindow(preferencesPopupWindow)
     preferencesPopupWindow.removeMenu()
     preferencesPopupWindow.loadURL(preferencesURL)
 

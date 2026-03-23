@@ -78,7 +78,8 @@ const collections = {
     bulkCreate: function (data) {
       console.info(`[DB] db.files.bulkCreate: ${data.length} files`)
       return models.File.bulkCreate(data, {
-        validate: false // assume data is correct for speed boost
+        validate: false, // assume data is correct for speed boost
+        ignoreDuplicates: true
       })
     },
     update: function (data) {

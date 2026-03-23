@@ -31,16 +31,16 @@
   import fileHelper from '../../../utils/fileHelper'
   import ConfirmAlert from './Common/ConfirmAlert'
   import { mapState } from 'vuex'
-  import Analytics from 'electron-ga'
+  import { createAnalytics } from '../services/analytics'
   import env from '../../../env.json'
-  const { remote } = window.require('electron')
+  import remote from '../services/remote'
   const log = require('electron-log')
   console.log = log.log
   console.info = log.info
 
   export default {
     name: 'landing-page',
-    components: { SideNavigation, EmptyView, FileList, FileContainer, GlobalProgress, ConfirmAlert },
+    components: { SideNavigation, EmptyView, FileContainer, GlobalProgress, ConfirmAlert },
     data () {
       return {
         alertTitle: 'You are up to date',
@@ -95,7 +95,7 @@
       async sendVersionOfApp () {
         let version = remote.getGlobal('version')
         let guid = remote.getGlobal('userId')
-        const analytics = new Analytics(env.analytics.id, { appName: env.analytics.appName, appVersion: `${version}`, clientId: `${guid}` })
+        const analytics = createAnalytics(env.analytics.id, { appName: env.analytics.appName, appVersion: `${version}`, clientId: `${guid}` })
         await analytics.send('screenview', { cd: `${guid}`, 'an': env.analytics.appName, 'av': `${version}`, 'cid': `${guid}` })
         await analytics.send('event', { ec: `${guid}`, 'ea': `${new Date().toLocaleString()}`, 'an': env.analytics.appName, 'av': `${version}`, 'cid': `${guid}` })
       },
@@ -127,11 +127,16 @@
     async created () {
       let html = document.getElementsByTagName('html')[0]
       html.style.overflowY = 'auto'
-      this.sendVersionOfApp()
+      try {
+        await this.sendVersionOfApp()
+      } catch (error) {
+        console.info('[Landing] failed to send analytics', error)
+      }
       this.$electron.ipcRenderer.on('showUpToDatePopup', (event, shouldDisplayUpToDatePopup) => {
         this.isPopupOpened = shouldDisplayUpToDatePopup
       })
       this.$electron.ipcRenderer.on('onClearAllData', async (event, message) => {
+        await this.$store.dispatch('reset')
         await this.$refs.sideNavigation.reloadStreamListFromLocalDB()
       })
     }

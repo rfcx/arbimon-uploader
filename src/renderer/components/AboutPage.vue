@@ -8,8 +8,8 @@
 </template>
 
 <script>
-  import settings from 'electron-settings'
-  const { remote } = window.require('electron')
+  import settings from '../services/settings'
+  import remote from '../services/remote'
 
   export default {
     data () {

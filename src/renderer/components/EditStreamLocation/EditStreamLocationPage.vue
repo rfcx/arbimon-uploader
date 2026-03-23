@@ -50,7 +50,7 @@
 import streamHelper from '../../../../utils/streamHelper'
 import dateHelper from '../../../../utils/dateHelper'
 import api from '../../../../utils/api'
-import settings from 'electron-settings'
+import settings from '../../services/settings'
 import Map from '../Common/Map/Map'
 import ipcRendererSend from '../../services/ipc'
 import { faTrash } from '@fortawesome/free-solid-svg-icons'

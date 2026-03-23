@@ -13,6 +13,34 @@ import 'firebase/performance'
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { faChevronUp, faChevronDown, faPencilAlt, faRedo, faEyeSlash, faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+const log = require('electron-log')
+const { ipcRenderer } = require('electron')
+
+function serializeRendererArg (arg) {
+  if (arg instanceof Error) {
+    return {
+      name: arg.name,
+      message: arg.message,
+      stack: arg.stack
+    }
+  }
+  return arg
+}
+
+function reportRendererError (label, ...args) {
+  console.error(label, ...args)
+  log.error(label, ...args)
+
+  try {
+    ipcRenderer.send('renderer.error', {
+      label,
+      args: args.map(serializeRendererArg)
+    })
+  } catch (error) {
+    console.error('[Renderer][IPC]', error)
+    log.error('[Renderer][IPC]', error)
+  }
+}
 
 const firebaseConfig = {
   apiKey: 'AIzaSyCfEDNKPWom20xfv69v-YHuT1XzwPg8B_g',
@@ -23,16 +51,39 @@ const firebaseConfig = {
   messagingSenderId: '245204209562',
   appId: '1:245204209562:web:93bcf78069d63042463423'
 }
-firebase.initializeApp(firebaseConfig)
-firebase.performance()
+try {
+  firebase.initializeApp(firebaseConfig)
+  if (typeof firebase.performance === 'function') {
+    firebase.performance()
+  }
+} catch (error) {
+  reportRendererError('[Renderer][Firebase]', error)
+}
 
 library.add(faChevronUp, faChevronDown, faPencilAlt, faRedo, faEyeSlash, faExternalLinkAlt)
 
-if (!process.env.IS_WEB) Vue.use(require('vue-electron'))
+if (!process.env.IS_WEB) {
+  try {
+    Vue.use(require('vue-electron'))
+  } catch (error) {
+    reportRendererError('[Renderer][VueElectron]', error)
+  }
+}
 
 Vue.http = Vue.prototype.$http = axios
 Vue.config.productionTip = false
 Vue.config.devtools = process.env.NODE_ENV !== 'production'
+Vue.config.errorHandler = (error, vm, info) => {
+  reportRendererError('[Renderer][Vue]', info, error)
+}
+
+window.addEventListener('error', (event) => {
+  reportRendererError('[Renderer][Window]', event.message, event.error)
+})
+
+window.addEventListener('unhandledrejection', (event) => {
+  reportRendererError('[Renderer][Promise]', event.reason)
+})
 
 Vue.component('fa-icon', FontAwesomeIcon)
 Vue.directive('click-outside', {

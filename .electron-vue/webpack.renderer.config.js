@@ -5,12 +5,11 @@ process.env.BABEL_ENV = 'renderer'
 const path = require('path')
 const { dependencies } = require('../package.json')
 const webpack = require('webpack')
-
-const BabiliWebpackPlugin = require('babili-webpack-plugin')
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const { VueLoaderPlugin } = require('vue-loader')
+const sass = require('sass')
 
 /**
  * List of node_modules to include in webpack bundle
@@ -32,28 +31,24 @@ let rendererConfig = {
   module: {
     rules: [
       {
-        test: /\.(js|vue)$/,
-        enforce: 'pre',
-        exclude: /node_modules/,
-        use: {
-          loader: 'eslint-loader',
-          options: {
-            formatter: require('eslint-friendly-formatter')
-          }
-        }
-      },
-      {
         test: /\.scss$/,
         use: ['vue-style-loader', 'css-loader', {
           loader: 'sass-loader',
           options: {
+            implementation: sass,
             data: '@import "./src/renderer/globals";'
           }
         }]
       },
       {
         test: /\.sass$/,
-        use: ['vue-style-loader', 'css-loader', 'sass-loader?indentedSyntax']
+        use: ['vue-style-loader', 'css-loader', {
+          loader: 'sass-loader',
+          options: {
+            implementation: sass,
+            indentedSyntax: true
+          }
+        }]
       },
       {
         test: /\.less$/,
@@ -83,8 +78,29 @@ let rendererConfig = {
           options: {
             extractCSS: process.env.NODE_ENV === 'production',
             loaders: {
-              sass: 'vue-style-loader!css-loader!sass-loader?indentedSyntax=1&data=@import "./src/renderer/globals"',
-              scss: 'vue-style-loader!css-loader!sass-loader?data=@import "./src/renderer/globals";',
+              sass: [
+                'vue-style-loader',
+                'css-loader',
+                {
+                  loader: 'sass-loader',
+                  options: {
+                    implementation: sass,
+                    indentedSyntax: true,
+                    data: '@import "./src/renderer/globals"'
+                  }
+                }
+              ],
+              scss: [
+                'vue-style-loader',
+                'css-loader',
+                {
+                  loader: 'sass-loader',
+                  options: {
+                    implementation: sass,
+                    data: '@import "./src/renderer/globals";'
+                  }
+                }
+              ],
               less: 'vue-style-loader!css-loader!less-loader'
             }
           }
@@ -144,6 +160,7 @@ let rendererConfig = {
   ],
   output: {
     filename: '[name].js',
+    hashFunction: 'sha256',
     libraryTarget: 'commonjs2',
     path: path.join(__dirname, '../dist/electron')
   },
@@ -176,7 +193,6 @@ if (process.env.NODE_ENV === 'production') {
   rendererConfig.devtool = ''
 
   rendererConfig.plugins.push(
-    new BabiliWebpackPlugin(),
     new CopyWebpackPlugin([
       {
         from: path.join(__dirname, '../static'),

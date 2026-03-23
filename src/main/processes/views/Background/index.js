@@ -1,4 +1,5 @@
-import { BrowserWindow, powerMonitor, powerSaveBlocker } from 'electron'
+import { enableRemoteForWindow, getRendererWebPreferences } from '../../../services/window-preferences'
+const { BrowserWindow, powerMonitor, powerSaveBlocker } = require('electron')
 
 var suspendPowerSaveBlockerId
 var lockScreenPowerSaveBlockerId
@@ -15,8 +16,9 @@ export default {
     const backgroundAPIURL = process.env.NODE_ENV === 'development' ? `http://localhost:9080/#/api-service` : `file://${__dirname}/index.html#/api-service`
     const backgroundAPIWindow = new BrowserWindow({
       show: false,
-      webPreferences: { nodeIntegration: true, backgroundThrottling: true }
+      webPreferences: getRendererWebPreferences({ backgroundThrottling: true })
     })
+    enableRemoteForWindow(backgroundAPIWindow)
     backgroundAPIWindow.loadURL(backgroundAPIURL)
 
     // Monitor process

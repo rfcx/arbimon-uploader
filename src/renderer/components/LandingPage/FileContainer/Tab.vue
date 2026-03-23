@@ -6,7 +6,7 @@
           v-for="tab in tabGroups"
           :key="tab.id"
           :class="{ 'is-active': selectedTab ? tab.id === selectedTab : tab.id === 'Prepared' }"
-          @click="setActive(tab.id)"
+          @click="selectTab(tab.id)"
         >
           <a>
             <img class="file-tab__fail-icon" :src="require(`../../../assets/ic-state-failed.svg`)" v-if="hasFailedFiles(tab.id)" />
@@ -57,7 +57,13 @@ export default {
         case 'Completed': return this.completedGroup.hasErrorFiles
       }
     },
-    setActive (tab) {
+    selectTab (tab) {
+      this.$emit('onSelectTab', tab)
+
+      if (!this.selectedStreamId) {
+        return
+      }
+
       const tabObject = {}
       tabObject[this.selectedStreamId] = tab
       this.$store.dispatch('setSelectedTab', tabObject)

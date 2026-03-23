@@ -63,10 +63,10 @@
   import fileState from '../../../../utils/fileState'
   import streamHelper from '../../../../utils/streamHelper'
   import ConfirmAlert from '../Common/ConfirmAlert'
-  import settings from 'electron-settings'
+  import settings from '../../services/settings'
   import infiniteScroll from 'vue-infinite-scroll'
   import ipcRendererSend from '../../services/ipc'
-  const { remote } = window.require('electron')
+  import remote from '../../services/remote'
   const { ERROR_SERVER } = fileState.state
 
   const DEFAULT_PAGE_SIZE = 50
@@ -101,6 +101,7 @@
         isUploadingProcessEnabled: state => state.AppSetting.isUploadingProcessEnabled
       }),
       selectedStream () {
+        if (!Array.isArray(this.streams)) return null
         return this.streams.find(s => s.id === this.selectedStreamId)
       },
       isRequiredSymbols () {
@@ -111,6 +112,18 @@
       }
     },
     methods: {
+      async ensureSelectedStream () {
+        if (!Array.isArray(this.streams) || this.streams.length <= 0) {
+          return
+        }
+
+        const hasSelectedStream = this.streams.some(stream => stream.id === this.selectedStreamId)
+        if (hasSelectedStream) {
+          return
+        }
+
+        await this.$store.dispatch('setSelectedStreamId', this.streams[0].id)
+      },
       toggleUserMenu () {
         this.showUserMenu = !this.showUserMenu
       },
@@ -193,7 +206,9 @@
       },
       async reloadStreamListFromLocalDB () {
         const limit = (this.streams.length > 0 && this.streams.length > DEFAULT_PAGE_SIZE) ? this.streams.length : DEFAULT_PAGE_SIZE
-        this.streams = await ipcRendererSend('db.streams.getStreamWithStats', `db.streams.getStreamWithStats.${Date.now()}`, { limit: limit, offset: 0 })
+        const streams = await ipcRendererSend('db.streams.getStreamWithStats', `db.streams.getStreamWithStats.${Date.now()}`, { limit: limit, offset: 0 })
+        this.streams = Array.isArray(streams) ? streams : []
+        await this.ensureSelectedStream()
         this.$emit('update:getStreamList', this.streams)
       },
       async loadMore () {
@@ -209,7 +224,11 @@
         }
         const currentStreams = this.streams
         const newStreams = await ipcRendererSend('db.streams.getStreamWithStats', `db.streams.getStreamWithStats.${Date.now()}`, { limit: DEFAULT_PAGE_SIZE, offset: currentStreams.length })
+        if (!Array.isArray(newStreams)) {
+          return
+        }
         this.streams = mergeById(currentStreams, newStreams)
+        await this.ensureSelectedStream()
       },
       startStreamFetchingInterval () {
         console.info('[SideNav] startStreamFetchingInterval')
@@ -243,7 +262,12 @@
       }
     },
     async created () {
-      await this.reloadStreamListFromLocalDB()
+      try {
+        await this.reloadStreamListFromLocalDB()
+      } catch (error) {
+        console.error('[SideNav] failed to load streams', error)
+        this.streams = []
+      }
       this.manageStreamFetchingInterval(this.currentUploadingSessionId, this.isUploadingProcessEnabled)
       if (remote.getGlobal('firstLogIn')) {
         this.$electron.ipcRenderer.send('resetFirstLogIn')
