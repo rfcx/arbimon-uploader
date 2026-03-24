@@ -35,11 +35,23 @@ jobs:
           NODE_OPTIONS: --openssl-legacy-provider --max_old_space_size=4096
 
       - name: Build Windows release
+        if: ${{ vars.WINDOWS_SIGN_ENABLED == 'true' }}
         shell: bash
         run: npm run build:win
         env:
           CSC_LINK: ${{ secrets.WIN_CERT }}
           CSC_KEY_PASSWORD: ${{ secrets.WIN_CERT_PWD }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PYTHON: python
+          npm_config_python: python
+          NODE_OPTIONS: --openssl-legacy-provider --max_old_space_size=4096
+
+      - name: Build Windows release (unsigned)
+        if: ${{ vars.WINDOWS_SIGN_ENABLED != 'true' }}
+        shell: bash
+        run: npm run build:win
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PYTHON: python
           npm_config_python: python
