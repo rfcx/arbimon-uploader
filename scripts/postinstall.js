@@ -1,5 +1,4 @@
 const { execFileSync } = require('child_process')
-const path = require('path')
 
 function shouldSkipNativeRebuild () {
   if (process.env.SKIP_ELECTRON_REBUILD === '1') return true
@@ -14,14 +13,8 @@ if (shouldSkipNativeRebuild()) {
   process.exit(0)
 }
 
-const electronBuilderBin = path.join(
-  __dirname,
-  '..',
-  'node_modules',
-  '.bin',
-  process.platform === 'win32' ? 'electron-builder.cmd' : 'electron-builder'
-)
+const electronBuilderCli = require.resolve('electron-builder/out/cli/cli.js')
 
-execFileSync(electronBuilderBin, ['install-app-deps'], {
+execFileSync(process.execPath, [electronBuilderCli, 'install-app-deps'], {
   stdio: 'inherit'
 })
