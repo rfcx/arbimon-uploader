@@ -41,7 +41,6 @@ jobs:
         env:
           CSC_LINK: ${{ secrets.WIN_CERT }}
           CSC_KEY_PASSWORD: ${{ secrets.WIN_CERT_PWD }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PYTHON: python
           npm_config_python: python
           NODE_OPTIONS: --openssl-legacy-provider --max_old_space_size=4096
@@ -52,16 +51,26 @@ jobs:
         run: npm run build:win
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PYTHON: python
           npm_config_python: python
           NODE_OPTIONS: --openssl-legacy-provider --max_old_space_size=4096
+
+      - name: List build artifacts
+        shell: bash
+        run: |
+          echo "build directory:"
+          find build -maxdepth 4 -type f | sort || true
+          echo "workspace RELEASES files:"
+          find . -maxdepth 6 -name RELEASES -type f | sort || true
 
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            build/RELEASES
             build/*.exe
             build/*.nupkg
-          fail_on_unmatched_files: true
+            build/**/RELEASES
+            RELEASES
+          fail_on_unmatched_files: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
