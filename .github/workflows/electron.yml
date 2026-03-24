@@ -34,10 +34,6 @@ jobs:
           npm_config_python: python
           NODE_OPTIONS: --openssl-legacy-provider --max_old_space_size=4096
 
-      - name: Clean build output
-        shell: bash
-        run: rm -rf build dist/electron
-
       - name: Build Windows release
         if: ${{ vars.WINDOWS_SIGN_ENABLED == 'true' }}
         shell: bash
