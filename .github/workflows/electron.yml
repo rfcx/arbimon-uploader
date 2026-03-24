@@ -34,6 +34,10 @@ jobs:
           npm_config_python: python
           NODE_OPTIONS: --openssl-legacy-provider --max_old_space_size=4096
 
+      - name: Clean build output
+        shell: bash
+        run: rm -rf build dist/electron
+
       - name: Build Windows release
         if: ${{ vars.WINDOWS_SIGN_ENABLED == 'true' }}
         shell: bash
@@ -67,10 +71,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            build/*.exe
-            build/*.nupkg
-            build/**/RELEASES
-            RELEASES
-          fail_on_unmatched_files: false
+            build/squirrel-windows*/Arbimon.Uploader Setup *.exe
+            build/squirrel-windows*/RELEASES
+            build/squirrel-windows*/rfcx-ingest-*.nupkg
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
