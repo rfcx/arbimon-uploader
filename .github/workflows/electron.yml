@@ -34,6 +34,12 @@ jobs:
           npm_config_python: python
           NODE_OPTIONS: --openssl-legacy-provider --max_old_space_size=4096
 
+      - name: Clean stale Windows artifacts
+        shell: bash
+        run: |
+          rm -rf build/squirrel-windows build/squirrel-windows-ia32 build/win-unpacked build/win-ia32-unpacked
+          rm -f build/builder-debug.yml
+
       - name: Build Windows release
         if: ${{ vars.WINDOWS_SIGN_ENABLED == 'true' }}
         shell: bash
@@ -63,13 +69,18 @@ jobs:
           echo "workspace RELEASES files:"
           find . -maxdepth 6 -name RELEASES -type f | sort || true
 
+      - name: Derive release version
+        id: version
+        shell: bash
+        run: echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            build/squirrel-windows*/Arbimon.Uploader Setup *.exe
+            build/squirrel-windows*/Arbimon.Uploader Setup ${{ steps.version.outputs.value }}*.exe
             build/squirrel-windows*/RELEASES
-            build/squirrel-windows*/rfcx-ingest-*.nupkg
+            build/squirrel-windows*/rfcx-ingest-${{ steps.version.outputs.value }}-*.nupkg
           fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
