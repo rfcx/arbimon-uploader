@@ -1,7 +1,7 @@
 import authService from './auth-service'
 import index from '../index'
 import settings from 'electron-settings'
-const { BrowserWindow, Menu, app } = require('electron')
+const { BrowserWindow, Menu, app, dialog } = require('electron')
 const http = require('http')
 const { redirectUri } = require('../../../env').auth0
 
@@ -98,6 +98,12 @@ function createAuthWindow () {
     })
     .catch(async (error) => {
       console.info('[AuthWindow] failed to start callback server', error)
+      dialog.showErrorBox(
+        'Unable to start login',
+        `The app could not open its local login callback on ${redirectURL.hostname}:${redirectURL.port}.\n\n` +
+        `Please close any old Arbimon Uploader processes and try again.\n\n` +
+        `Details: ${error && error.message ? error.message : error}`
+      )
       await destroyAuthWin()
     })
 

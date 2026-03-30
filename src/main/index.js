@@ -13,8 +13,17 @@ const log = require('electron-log')
 const remoteMain = require('@electron/remote/main')
 console.log = log.log
 console.info = log.info
+console.error = log.error
 log.transports.console.format = '{h}:{i}:{s} {text}'
 log.transports.file.getFile()
+
+process.on('uncaughtException', (error) => {
+  console.error('[App] uncaughtException', error)
+})
+
+process.on('unhandledRejection', (error) => {
+  console.error('[App] unhandledRejection', error)
+})
 
 /**
  * Set `__static` path to static files in production
@@ -235,7 +244,9 @@ async function createAppWindow (openedAsHidden) {
   } catch (err) {
     // An Entry for new users
     console.info('[MainWindow] someting wrong about Auth, creating Auth Window', err)
-    await authService.logout()
+    authService.logout().catch((logoutErr) => {
+      console.error('[Auth] logout before auth window failed', logoutErr)
+    })
     createAuthWindow()
   }
 }
@@ -367,6 +378,11 @@ function checkIngestServicelUrl () {
     global.ingestServicelUrl = process.env.npm_config_url
   }
 }
+
+function isSquirrelFirstRun () {
+  return (process.argv || []).includes('--squirrel-firstrun')
+}
+
 app.commandLine.appendArgument('--enable-features=Metal')
 app.on('ready', async () => {
   if (`${process.env.VUE_DEV_TOOLS_ENABLED}` === 'true') {
@@ -396,6 +412,10 @@ app.on('ready', async () => {
   global.platform = (process.platform === 'win32' || process.platform === 'win64') ? 'win' : 'mac'
   console.info('[App] version', global.version)
   createAutoUpdaterSub()
+  if (isSquirrelFirstRun()) {
+    console.info('[Update] skipping auto update check during squirrel first run')
+    return
+  }
   if (settings.get('settings.auto_update_app')) {
     updateProcess.checkForUpdates()
     updateProcess.createUpdateInterval()
