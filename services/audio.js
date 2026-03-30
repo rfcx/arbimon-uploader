@@ -1,14 +1,44 @@
-const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path.replace('app.asar', 'app.asar.unpacked')
-const ffprobePath = require('@ffprobe-installer/ffprobe').path.replace('app.asar', 'app.asar.unpacked')
 const ffmpeg = require('fluent-ffmpeg')
-ffmpeg.setFfmpegPath(ffmpegPath)
-ffmpeg.setFfprobePath(ffprobePath)
+
+let isConfigured = false
+
+const normalizeBinaryPath = (binaryPath) => binaryPath.replace('app.asar', 'app.asar.unpacked')
+
+const loadFfmpegInstallerPath = () => require('@ffmpeg-installer/ffmpeg').path
+
+const loadFfprobeInstallerPath = () => require('@ffprobe-installer/ffprobe').path
+
+const resolveBinaryPath = (loadInstallerPath, envVarName, defaultBinaryName, packageName) => {
+  if (process.env[envVarName]) {
+    return process.env[envVarName]
+  }
+
+  try {
+    return normalizeBinaryPath(loadInstallerPath())
+  } catch (error) {
+    if (error && /Unsupported platform\/architecture/.test(String(error))) {
+      console.warn(`[Audio] ${packageName} unavailable for ${process.platform}-${process.arch}, falling back to ${defaultBinaryName} from PATH`)
+      return defaultBinaryName
+    }
+
+    throw error
+  }
+}
+
+const configureBinaryPaths = () => {
+  if (isConfigured) return
+
+  ffmpeg.setFfmpegPath(resolveBinaryPath(loadFfmpegInstallerPath, 'FFMPEG_PATH', 'ffmpeg', '@ffmpeg-installer/ffmpeg'))
+  ffmpeg.setFfprobePath(resolveBinaryPath(loadFfprobeInstallerPath, 'FFPROBE_PATH', 'ffprobe', '@ffprobe-installer/ffprobe'))
+  isConfigured = true
+}
 
 /**
    * convert wav files to flac
    * @returns desination path of the converted file
    */
 const convert = (sourceFile, destinationPath, metadata) => {
+  configureBinaryPaths()
   const basedOutputOptions = ['-ac 1'] // force convert to mono channel
   const meta = metadata ? ['-metadata', `comment=${metadata.comment}`, '-metadata', `artist=${metadata.artist}`] : []
   const outputOptions = basedOutputOptions.concat(meta)
@@ -47,6 +77,7 @@ const convert = (sourceFile, destinationPath, metadata) => {
  * @returns {Promise<Object>} - an object containing the meta data
  */
 const identify = (sourceFile) => {
+  configureBinaryPaths()
   return new Promise((resolve, reject) => {
     ffmpeg(sourceFile)
       .ffprobe(0, function (err, result) {
