@@ -11,6 +11,7 @@ const jwtDecode = require('jwt-decode')
 const setupEvents = require('./../../setupEvents')
 const log = require('electron-log')
 const remoteMain = require('@electron/remote/main')
+
 console.log = log.log
 console.info = log.info
 console.error = log.error
@@ -244,9 +245,7 @@ async function createAppWindow (openedAsHidden) {
   } catch (err) {
     // An Entry for new users
     console.info('[MainWindow] someting wrong about Auth, creating Auth Window', err)
-    authService.logout().catch((logoutErr) => {
-      console.error('[Auth] logout before auth window failed', logoutErr)
-    })
+    await authService.logout()
     createAuthWindow()
   }
 }
@@ -378,11 +377,6 @@ function checkIngestServicelUrl () {
     global.ingestServicelUrl = process.env.npm_config_url
   }
 }
-
-function isSquirrelFirstRun () {
-  return (process.argv || []).includes('--squirrel-firstrun')
-}
-
 app.commandLine.appendArgument('--enable-features=Metal')
 app.on('ready', async () => {
   if (`${process.env.VUE_DEV_TOOLS_ENABLED}` === 'true') {
@@ -412,10 +406,6 @@ app.on('ready', async () => {
   global.platform = (process.platform === 'win32' || process.platform === 'win64') ? 'win' : 'mac'
   console.info('[App] version', global.version)
   createAutoUpdaterSub()
-  if (isSquirrelFirstRun()) {
-    console.info('[Update] skipping auto update check during squirrel first run')
-    return
-  }
   if (settings.get('settings.auto_update_app')) {
     updateProcess.checkForUpdates()
     updateProcess.createUpdateInterval()
