@@ -37,7 +37,7 @@
           settings.set('settings.onLine', this.onLine)
         } else {
           isOnline().then(online => {
-            console.unfo('\nupdateOnlineStatus', online)
+            console.info('\nupdateOnlineStatus', online)
             settings.set('settings.onLine', online)
           })
         }

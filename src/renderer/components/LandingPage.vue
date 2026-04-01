@@ -84,7 +84,7 @@
           }
         })
         const query = { currentActiveSite: JSON.stringify(this.selectedStream) }
-        const isFolder = [...files].length === 1 && ![...files].find(item => ['wav', 'opus', 'flac'].includes(fileHelper.getExtension(item.path)))
+        const isFolder = files.length === 1 && fileHelper.isExist(files[0].path) && fileHelper.isFolder(files[0].path)
         if (isFolder) {
           query.folderPath = fileObjects[0].path
         } else {
