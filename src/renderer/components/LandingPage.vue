@@ -83,9 +83,17 @@
             'path': file.path
           }
         })
+        const firstPath = files[0].path
+        let isFolder = false
+        try {
+          if (firstPath && fileHelper.isExist(firstPath)) {
+            isFolder = fileHelper.isFolder(firstPath)
+          }
+        } catch (e) {
+          console.error('Folder check failed:', firstPath, e)
+        }
         const query = { currentActiveSite: JSON.stringify(this.selectedStream) }
-        const isFolder = files.length === 1 && fileHelper.isExist(files[0].path) && fileHelper.isFolder(files[0].path)
-        if (isFolder) {
+        if (files.length === 1 && isFolder) {
           query.folderPath = fileObjects[0].path
         } else {
           query.selectedFiles = JSON.stringify(fileObjects)
