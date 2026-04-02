@@ -1,6 +1,5 @@
 <template>
-  <div id="wrapper-landing-page" :class="{ 'drag-active': isDragging }" @dragenter="handleDrag" @dragover="handleDrag" @drop.prevent="handleDrop"
-     @dragover.prevent @dragleave="outDrag">
+  <div id="wrapper-landing-page" :class="{ 'drag-active': isDragging }" @dragenter="handleDrag" @dragover.prevent @drop.prevent="handleDrop" @dragleave="outDrag">
     <!-- <section class="main-content columns is-mobile"> -->
       <side-navigation ref="sideNavigation"
         :class="{ 'side-menu__with-progress': shouldShowProgress}"
@@ -65,16 +64,32 @@
         e.dataTransfer.dropEffect = 'none'
       },
       async handleDrop (e) {
+        e.preventDefault()
+        let files = []
         const t0 = performance.now()
-        await this.handleFiles(e.dataTransfer.files)
+        console.info('e.dataTransfer.files', e.dataTransfer.files)
+        if (e.dataTransfer.files && e.dataTransfer.files.length) {
+          files = [...e.dataTransfer.files]
+        } else if (e.dataTransfer.items && e.dataTransfer.items.length) {
+          for (const item of e.dataTransfer.items) {
+            if (item.kind === 'file') {
+              const file = item.getAsFile()
+              if (file) files.push(file)
+            }
+          }
+        }
+        this.isDragging = false
+        if (!files.length) {
+          console.warn('No files dropped')
+          return
+        }
+        console.log('Dropped:', files.map(f => f.path))
+        await this.handleFiles(files)
         const t1 = performance.now()
         console.info('[Landing] ⏱ handleDrop ' + (t1 - t0) + ' ms')
       },
       async handleFiles (files) {
-        this.isDragging = false
-        if (!files) { return }
-        console.info('handleFiles', [...files].length)
-        const fileObjects = [...files].map(file => {
+        const fileObjects = files.map(file => {
           return {
             'lastModified': file.lastModified,
             'lastModifiedDate': file.lastModifiedDate,
@@ -84,7 +99,7 @@
             'path': file.path
           }
         })
-        const firstPath = files[0].path
+        const firstPath = fileObjects[0].path
         const isFolderCheck = (filePath) => {
           try {
             if (!filePath) return false
@@ -100,6 +115,7 @@
         const query = { currentActiveSite: JSON.stringify(this.selectedStream) }
         if (isFolder) {
           query.folderPath = fileObjects[0].path
+          console.info('fileObjects[0].path', fileObjects[0].path)
         } else {
           query.selectedFiles = JSON.stringify(fileObjects)
         }
