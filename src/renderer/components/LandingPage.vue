@@ -73,6 +73,7 @@
       async handleFiles (files) {
         this.isDragging = false
         if (!files) { return }
+        console.info('handleFiles', [...files].length)
         const fileObjects = [...files].map(file => {
           return {
             'lastModified': file.lastModified,
@@ -84,16 +85,20 @@
           }
         })
         const firstPath = files[0].path
-        let isFolder = false
-        try {
-          if (firstPath && fileHelper.isExist(firstPath)) {
-            isFolder = fileHelper.isFolder(firstPath)
+        const isFolderCheck = (filePath) => {
+          try {
+            if (!filePath) return false
+            if (!fileHelper.isExist(filePath)) return false
+            return fileHelper.isFolder(filePath)
+          } catch (e) {
+            console.error('[isFolderCheck] failed:', filePath, e)
+            return false
           }
-        } catch (e) {
-          console.error('Folder check failed:', firstPath, e)
         }
+        let isFolder = isFolderCheck(firstPath)
+        console.info('isFolder', isFolder, 'firstPath', firstPath)
         const query = { currentActiveSite: JSON.stringify(this.selectedStream) }
-        if (files.length === 1 && isFolder) {
+        if (isFolder) {
           query.folderPath = fileObjects[0].path
         } else {
           query.selectedFiles = JSON.stringify(fileObjects)
