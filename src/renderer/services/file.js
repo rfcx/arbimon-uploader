@@ -552,7 +552,7 @@ class FileProvider {
 
   async getDeviceInfoFromFolder (folder) {
     const files = await this.searchFilesFromFolder(folder)
-    if (!files || files.length < 0) { return null }
+    if (!files || files.length <= 0) { return null }
     // First wav file with duration
     for (let file of files) {
       if (dateHelper.getYear(file.name) > 1971 && fileHelper.getExtension(file.path) === 'wav' && fileHelper.getExtension(file.path) === 'wav' && await fileHelper.getFileDuration(file.path).catch(() => false)) {

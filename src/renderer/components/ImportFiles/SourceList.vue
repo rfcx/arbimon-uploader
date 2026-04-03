@@ -42,6 +42,7 @@
 </template>
 
 <script>
+import path from 'path'
 import DriveList from '../../../../utils/DriveListHelper'
 import fileHelper from '../../../../utils/fileHelper'
 import FileSource from './FileSorce'
@@ -98,7 +99,7 @@ export default {
       if (rootFolderIndex === -1) {
         return fileHelper.getDirectoryFromFilePath(firstFile.path)
       }
-      return absoluteParts.slice(0, rootFolderIndex + 1).join('\\')
+      return absoluteParts.slice(0, rootFolderIndex + 1).join(path.sep)
     },
     async getExternalDriveList () {
       this.isLoading = true
