@@ -1,11 +1,6 @@
-let AnalyticsLib = null
+import axios from 'axios'
 
-try {
-  AnalyticsLib = require('electron-ga')
-  AnalyticsLib = AnalyticsLib && AnalyticsLib.default ? AnalyticsLib.default : AnalyticsLib
-} catch (error) {
-  AnalyticsLib = null
-}
+const GA_ENDPOINT = 'https://www.google-analytics.com/collect'
 
 function createNoopAnalytics () {
   return {
@@ -13,15 +8,43 @@ function createNoopAnalytics () {
   }
 }
 
+function createPayload (trackId, options, eventType, params) {
+  const payload = {
+    v: 1,
+    tid: trackId,
+    t: eventType,
+    cid: params.cid || options.clientId || 'anonymous'
+  }
+
+  Object.keys(params).forEach((key) => {
+    if (params[key] !== undefined && params[key] !== null) {
+      payload[key] = params[key]
+    }
+  })
+
+  if (!payload.an && options.appName) payload.an = options.appName
+  if (!payload.av && options.appVersion) payload.av = options.appVersion
+
+  return payload
+}
+
 export function createAnalytics (trackId, options = {}) {
-  if (!AnalyticsLib) {
+  if (!trackId) {
     return createNoopAnalytics()
   }
 
-  try {
-    return new AnalyticsLib(trackId, options)
-  } catch (error) {
-    console.info('[Analytics] disabled', error)
-    return createNoopAnalytics()
+  return {
+    async send (eventType, params = {}) {
+      try {
+        const payload = createPayload(trackId, options, eventType, params)
+        await axios.post(GA_ENDPOINT, new URLSearchParams(payload).toString(), {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          }
+        })
+      } catch (error) {
+        console.info('[Analytics] failed to send event', error)
+      }
+    }
   }
 }
