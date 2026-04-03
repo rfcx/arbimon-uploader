@@ -119,7 +119,7 @@
     "is-stream": "^2.0.0",
     "js-sha1": "^0.6.0",
     "jwt-decode": "2.2.0",
-    "mapbox-gl": "^0.53.1",
+    "mapbox-gl": "^1.11.0",
     "moment": "^2.24.0",
     "moment-timezone": "^0.5.31",
     "node-localstorage": "2.1.5",

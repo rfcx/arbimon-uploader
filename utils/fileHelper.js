@@ -41,6 +41,7 @@ const getExtension = (fileName) => {
 
 const getFilesFromDirectoryPath = (directoryPath) => {
   if (!fs.existsSync(directoryPath)) { return [] }
+  if (!fs.lstatSync(directoryPath).isDirectory()) { return [] }
   const filesSortByRecent = fs.readdirSync(directoryPath).filter(item => !(/(^|\/)\.[^/.]/g).test(item))
     .filter(file => fs.lstatSync(path.join(directoryPath, file)).isFile())
     .map(file => ({ name: file, mtime: fs.lstatSync(path.join(directoryPath, file)).mtime.getTime() }))

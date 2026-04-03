@@ -80,6 +80,26 @@ export default {
     }
   },
   methods: {
+    getSelectedFolderPath (files) {
+      if (!files || files.length === 0) return null
+      const firstFile = files[0]
+      if (!firstFile || !firstFile.path) return null
+      const relativePath = firstFile.webkitRelativePath || ''
+      if (!relativePath) {
+        return fileHelper.isFolder(firstFile.path) ? firstFile.path : fileHelper.getDirectoryFromFilePath(firstFile.path)
+      }
+      const relativeParts = relativePath.split('/').filter(Boolean)
+      const rootFolderName = relativeParts[0]
+      if (!rootFolderName) {
+        return fileHelper.getDirectoryFromFilePath(firstFile.path)
+      }
+      const absoluteParts = firstFile.path.split(/[\\/]/)
+      const rootFolderIndex = absoluteParts.lastIndexOf(rootFolderName)
+      if (rootFolderIndex === -1) {
+        return fileHelper.getDirectoryFromFilePath(firstFile.path)
+      }
+      return absoluteParts.slice(0, rootFolderIndex + 1).join('\\')
+    },
     async getExternalDriveList () {
       this.isLoading = true
       const drives = await DriveList.getExternalDriveList()
@@ -100,7 +120,8 @@ export default {
       this.$refs.folder.click()
     },
     async handleFolderChange (event) {
-      const path = event.target.files[0].path
+      const path = this.getSelectedFolderPath(event.target.files)
+      if (!path) return
       const deviceInfo = await this.$file.getDeviceInfoFromFolder(path)
       const deviceId = getDeviceId(deviceInfo)
       const deploymentId = getDeploymentId(deviceInfo)
