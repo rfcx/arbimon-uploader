@@ -73,12 +73,24 @@
         }
         console.info('Path from DataTransfer candidate:', pathFromData)
 
+        let webUtils
+        try {
+          webUtils = require('electron').webUtils
+        } catch (e) {
+          console.warn('webUtils not available')
+        }
         if (e.dataTransfer.files && e.dataTransfer.files.length) {
           for (let i = 0; i < e.dataTransfer.files.length; i++) {
             const file = e.dataTransfer.files[i]
-            if (!file.path && pathFromData && e.dataTransfer.files.length === 1) {
-              console.info('Recovering path for file:', pathFromData)
-              file.path = pathFromData
+            if (!file.path) {
+              if (webUtils && typeof webUtils.getPathForFile === 'function') {
+                file.path = webUtils.getPathForFile(file)
+                console.info(`Recovered path via webUtils for ${file.name}:`, file.path)
+              }
+              if (!file.path && pathFromData && e.dataTransfer.files.length === 1) {
+                console.info('Recovered path from DataTransfer:', pathFromData)
+                file.path = pathFromData
+              }
             }
             files.push(file)
           }
@@ -89,9 +101,15 @@
             if (item.kind === 'file') {
               const file = item.getAsFile()
               if (file) {
-                if (!file.path && pathFromData && e.dataTransfer.items.length === 1) {
-                  console.info('Recovering path for item:', pathFromData)
-                  file.path = pathFromData
+                if (!file.path) {
+                  if (webUtils && typeof webUtils.getPathForFile === 'function') {
+                    file.path = webUtils.getPathForFile(file)
+                    console.info(`Recovered path via webUtils (items) for ${file.name}:`, file.path)
+                  }
+                  if (!file.path && pathFromData && e.dataTransfer.items.length === 1) {
+                    console.info('Recovering path for item:', pathFromData)
+                    file.path = pathFromData
+                  }
                 }
                 files.push(file)
               }
