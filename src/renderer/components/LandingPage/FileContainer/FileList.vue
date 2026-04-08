@@ -27,7 +27,7 @@
         </tr>
       </tfoot>
     </table>
-    <empty-view v-else-if="files.length === 0" :hasFileInQueued="hasFileInQueued" :isDragging="isDragging" @onImportFiles="onImportFiles"></empty-view>
+    <empty-view v-else-if="files.length === 0" :hasFileInQueued="hasFileInQueued" :isDragging="isDragging" @onImportFiles="onImportFiles" @onSelectFolder="$emit('onSelectFolder')"></empty-view>
     <confirm-alert
       :content="deleteAlertTitle"
       confirmButtonText="Delete"

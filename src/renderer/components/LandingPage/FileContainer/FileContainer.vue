@@ -35,6 +35,7 @@
         :isLoadingMore="isFetching"
         @onImportFiles="onImportFiles"
         @onNeedResetFileList="resetFiles"
+        @onSelectFolder="$emit('onSelectFolder')"
     ></file-list>
 </div>
 </template>

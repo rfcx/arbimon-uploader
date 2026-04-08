@@ -22,7 +22,6 @@
       <span class="source-type__title">Other sources</span>
     </tr>
     <tr @click="onClickChangeFolder" :class="{'selected':  isSelected('folder') }">
-      <input type="file" ref="folder" webkitdirectory directory @change="handleFolderChange" style="display:none"/>
       <img class="row__icon" src="@/assets/ic-folder-empty-white.svg" v-if="isSelected('folder') || defaultState"/>
       <img class="row__icon" src="@/assets/ic-folder-empty.svg" v-else/>
       <span class="row__source-title" :class="{'default': defaultState}" v-if="selectedFolder.path">{{ selectedFolder.path }}</span>
@@ -30,7 +29,6 @@
       <RecorderTag :show="selectedFolder.deviceId" :isSelected="(isSelected('folder') || defaultState)" :type="selectedFolder.recorderType"/>
     </tr>
     <tr @click="onClickChooseFiles" :class="{'selected':  isSelected('file') }">
-      <input type="file" ref="file" multiple @change="handleFilesChange" style="display:none"/>
       <img class="row__icon" src="@/assets/ic-file-white.svg" v-if="isSelected('file') || defaultState"/>
       <img class="row__icon" src="@/assets/ic-file.svg" v-else/>
       <span class="row__source-title" :class="{'default': defaultState}" v-if="numberOfSelectedFiles > 0">{{ numberOfSelectedFiles + ' files selected' }}</span>
@@ -47,6 +45,7 @@ import DriveList from '../../../../utils/DriveListHelper'
 import fileHelper from '../../../../utils/fileHelper'
 import FileSource from './FileSorce'
 import RecorderTag from '../Common/Tag/RecorderTag'
+import remote from '../../services/remote'
 
 function getDeviceId (deviceInfo) {
   return deviceInfo ? deviceInfo.deviceId : null
@@ -118,7 +117,22 @@ export default {
       this.selectedSource = new FileSource.FileSourceFromExternal(drive.id, drive.deviceId, drive.deploymentId, drive.recorderType, drive.path, drive.label)
     },
     onClickChangeFolder () {
-      this.$refs.folder.click()
+      const paths = remote.dialog.showOpenDialogSync({
+        properties: ['openDirectory']
+      })
+      if (paths && paths.length > 0) {
+        this.handleFolderSelect(paths[0])
+      }
+    },
+    async handleFolderSelect (path) {
+      const deviceInfo = await this.$file.getDeviceInfoFromFolder(path)
+      const deviceId = getDeviceId(deviceInfo)
+      const deploymentId = getDeploymentId(deviceInfo)
+      const recorderType = getDeviceRecorderType(deviceInfo)
+      this.selectedFolder = {path, deviceId, deploymentId, recorderType}
+      this.selectedSource = new FileSource.FileSourceFromFolder(path, deviceId, deploymentId, recorderType)
+      // reset selected files
+      this.selectedFiles = []
     },
     async handleFolderChange (event) {
       const path = this.getSelectedFolderPath(event.target.files)
@@ -133,7 +147,35 @@ export default {
       this.selectedFiles = []
     },
     async onClickChooseFiles () {
-      this.$refs.file.click()
+      const paths = remote.dialog.showOpenDialogSync({
+        properties: ['openFile', 'multiSelections']
+      })
+      if (paths && paths.length > 0) {
+        const fs = require('fs')
+        const files = paths.map(filePath => {
+          const stats = fs.statSync(filePath)
+          return {
+            'lastModified': stats.mtimeMs,
+            'lastModifiedDate': new Date(stats.mtimeMs),
+            'name': path.basename(filePath),
+            'size': stats.size,
+            'type': '', // Type is not strictly needed here
+            'path': filePath
+          }
+        })
+        await this.handleFilesSelect(files)
+      }
+    },
+    async handleFilesSelect (files) {
+      this.selectedFiles = files
+      const firstWavFile = files.find(file => fileHelper.getExtension(file.path) === 'wav') // read only wav file header info
+      const deviceInfo = await this.$file.getDeviceInfo(firstWavFile)
+      const deviceId = getDeviceId(deviceInfo)
+      const deploymentId = getDeploymentId(deviceInfo)
+      const recorderType = getDeviceRecorderType(deviceInfo)
+      this.selectedSource = new FileSource.FileSourceFromFiles('id', deviceId, deploymentId, recorderType, files)
+      // reset selected folder
+      this.selectedFolder = {}
     },
     async handleFilesChange (event) {
       if (!event.target.files) { return }

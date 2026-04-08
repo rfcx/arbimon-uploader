@@ -6,8 +6,8 @@
         :getStreamList.sync="streams"
       />
       <div class="column content is-desktop">
-        <empty-view v-if="isEmptyStream" :isEmptyStream="isEmptyStream"></empty-view>
-        <file-container ref="fileContainer" v-else :isDragging="isDragging" @onImportFiles="handleFiles" @onNeedResetStreamList="resetStreamList"></file-container>
+        <empty-view v-if="isEmptyStream" :isEmptyStream="isEmptyStream" @onSelectFolder="selectFolderNative"></empty-view>
+        <file-container ref="fileContainer" v-else :isDragging="isDragging" @onImportFiles="handleFiles" @onNeedResetStreamList="resetStreamList" @onSelectFolder="selectFolderNative"></file-container>
       </div>
     <!-- </section> -->
     <global-progress ref="globalProgress"></global-progress>
@@ -167,6 +167,22 @@
       },
       async resetStreamList () {
         await this.$refs.sideNavigation.reloadStreamListFromLocalDB()
+      },
+      selectFolderNative () {
+        const paths = remote.dialog.showOpenDialogSync({
+          properties: ['openDirectory']
+        })
+        if (paths && paths.length > 0) {
+          const folderPath = paths[0]
+          console.info('Selected folder via native dialog:', folderPath)
+          this.handleFiles([{
+            path: folderPath,
+            name: require('path').basename(folderPath),
+            lastModified: Date.now(),
+            size: 0,
+            type: ''
+          }])
+        }
       }
     },
     computed: {

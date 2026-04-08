@@ -1,7 +1,8 @@
 <template>
   <div class="centered-block has-text-centered">
       <img :src="stateIcon" class="container__state-icon"><br>
-      <span class="container__state-status">{{ stateStatus }}</span>
+      <span class="container__state-status">{{ stateStatus }}</span><br>
+      <button class="button is-primary is-rounded container__button" @click="$emit('onSelectFolder')">Select Folder</button>
   </div>
 </template>
 
