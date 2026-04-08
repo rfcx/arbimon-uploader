@@ -39,14 +39,27 @@ const getExtension = (fileName) => {
   return fileName.split('.').pop().toLowerCase()
 }
 
-const getFilesFromDirectoryPath = (directoryPath) => {
+const getFilesFromDirectoryPath = (directoryPath, recursive = false) => {
   if (!fs.existsSync(directoryPath)) { return [] }
   if (!fs.lstatSync(directoryPath).isDirectory()) { return [] }
-  const filesSortByRecent = fs.readdirSync(directoryPath).filter(item => !(/(^|\/)\.[^/.]/g).test(item))
-    .filter(file => fs.lstatSync(path.join(directoryPath, file)).isFile())
-    .map(file => ({ name: file, mtime: fs.lstatSync(path.join(directoryPath, file)).mtime.getTime() }))
-    .sort((a, b) => b.mtime - a.mtime)
-  return filesSortByRecent.map(item => ({name: item.name, path: directoryPath + '/' + item.name, lastModified: item.mtime}))
+  let results = []
+  const items = fs.readdirSync(directoryPath).filter(item => !(/(^|\/)\.[^/.]/g).test(item))
+
+  for (const item of items) {
+    const fullPath = path.join(directoryPath, item)
+    const stats = fs.lstatSync(fullPath)
+    if (stats.isFile()) {
+      results.push({ name: item, path: fullPath, lastModified: stats.mtime.getTime() })
+    } else if (recursive && stats.isDirectory()) {
+      results = results.concat(getFilesFromDirectoryPath(fullPath, true))
+    }
+  }
+
+  if (!recursive) {
+    results.sort((a, b) => b.lastModified - a.lastModified)
+  }
+
+  return results
 }
 
 const getCheckSum = (filePath) => {

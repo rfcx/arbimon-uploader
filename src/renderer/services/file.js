@@ -541,11 +541,11 @@ class FileProvider {
   /* -- Import -- */
 
   async searchFilesFromFolder (folderPath) {
-    const searchPaths = ['.', './Data']
+    const searchPaths = ['.']
     const files = []
     for (const searchPath of searchPaths) {
       const pa = path.join(folderPath, searchPath)
-      files.push(...fileHelper.getFilesFromDirectoryPath(pa))
+      files.push(...fileHelper.getFilesFromDirectoryPath(pa, true))
     }
     return files
   }

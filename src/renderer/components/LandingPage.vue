@@ -83,7 +83,14 @@
           console.warn('No files dropped')
           return
         }
-        console.log('Dropped:', files.map(f => f.path))
+        if (e.dataTransfer.items && e.dataTransfer.items.length) {
+          console.info('items length', e.dataTransfer.items.length)
+          for (let i = 0; i < e.dataTransfer.items.length; i++) {
+            const item = e.dataTransfer.items[i]
+            console.info(`item[${i}] kind: ${item.kind}, type: ${item.type}`)
+          }
+        }
+        console.log('Dropped:', files.map(f => `${f.name} (path: ${f.path})`))
         await this.handleFiles(files)
         const t1 = performance.now()
         console.info('[Landing] ⏱ handleDrop ' + (t1 - t0) + ' ms')
