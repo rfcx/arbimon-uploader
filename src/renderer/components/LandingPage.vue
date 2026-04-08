@@ -68,13 +68,42 @@
         let files = []
         const t0 = performance.now()
         console.info('e.dataTransfer.files', e.dataTransfer.files)
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          console.info('e.dataTransfer.files[0].path', e.dataTransfer.files[0].path)
+        }
+        if (e.dataTransfer.types) {
+          for (let i = 0; i < e.dataTransfer.types.length; i++) {
+            const type = e.dataTransfer.types[i]
+            try {
+              console.info(`Type: ${type}, Data: ${e.dataTransfer.getData(type)}`)
+            } catch (err) {
+              console.info(`Type: ${type}, could not get data`)
+            }
+          }
+        }
+        const pathFromData = e.dataTransfer.getData('FileNameW') || e.dataTransfer.getData('FileName')
         if (e.dataTransfer.files && e.dataTransfer.files.length) {
-          files = [...e.dataTransfer.files]
+          for (let i = 0; i < e.dataTransfer.files.length; i++) {
+            const file = e.dataTransfer.files[i]
+            if (!file.path && pathFromData && e.dataTransfer.files.length === 1) {
+              console.info('Recovering path from DataTransfer:', pathFromData)
+              file.path = pathFromData
+            }
+            files.push(file)
+          }
         } else if (e.dataTransfer.items && e.dataTransfer.items.length) {
-          for (const item of e.dataTransfer.items) {
+          console.info('items length', e.dataTransfer.items.length)
+          for (let i = 0; i < e.dataTransfer.items.length; i++) {
+            const item = e.dataTransfer.items[i]
             if (item.kind === 'file') {
               const file = item.getAsFile()
-              if (file) files.push(file)
+              if (file) {
+                if (!file.path && pathFromData && e.dataTransfer.items.length === 1) {
+                  console.info('Recovering path from DataTransfer (items):', pathFromData)
+                  file.path = pathFromData
+                }
+                files.push(file)
+              }
             }
           }
         }

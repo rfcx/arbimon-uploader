@@ -20,7 +20,11 @@ const isExist = (path) => {
 }
 
 const isFolder = (filePath) => {
-  return fs.lstatSync(filePath).isDirectory()
+  try {
+    return filePath && fs.existsSync(filePath) && fs.lstatSync(filePath).isDirectory()
+  } catch (e) {
+    return false
+  }
 }
 
 const readFile = (filePath) => {
@@ -81,8 +85,13 @@ const getFileName = (fileName) => {
 }
 
 const getFileSize = (filePath) => {
-  const stats = fs.statSync(filePath)
-  return stats.size
+  try {
+    if (!filePath || !fs.existsSync(filePath)) return 0
+    const stats = fs.statSync(filePath)
+    return stats.size
+  } catch (e) {
+    return 0
+  }
 }
 
 const getDisplayFileDuration = (file) => {
