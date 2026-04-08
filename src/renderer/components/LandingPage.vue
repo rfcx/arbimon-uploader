@@ -1,5 +1,5 @@
 <template>
-  <div id="wrapper-landing-page" :class="{ 'drag-active': isDragging }" @dragenter="handleDrag" @dragover.prevent @drop.prevent="handleDrop" @dragleave="outDrag">
+  <div id="wrapper-landing-page" :class="{ 'drag-active': isDragging }" @dragenter="handleDrag" @dragover.prevent="onDragOver" @drop.prevent="handleDrop" @dragleave="outDrag">
     <!-- <section class="main-content columns is-mobile"> -->
       <side-navigation ref="sideNavigation"
         :class="{ 'side-menu__with-progress': shouldShowProgress}"
@@ -60,46 +60,37 @@
       },
       onDragOver (e) {
         e.preventDefault()
-        e.dataTransfer.effectAllowed = 'uninitialized'
-        e.dataTransfer.dropEffect = 'none'
+        e.dataTransfer.dropEffect = 'copy'
       },
       async handleDrop (e) {
         e.preventDefault()
         let files = []
         const t0 = performance.now()
         console.info('e.dataTransfer.files', e.dataTransfer.files)
-        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-          console.info('e.dataTransfer.files[0].path', e.dataTransfer.files[0].path)
+        let pathFromData = e.dataTransfer.getData('FileNameW') || e.dataTransfer.getData('FileName') || e.dataTransfer.getData('text/plain')
+        if (pathFromData && pathFromData.includes('\n')) {
+          pathFromData = pathFromData.split('\n')[0].trim()
         }
-        if (e.dataTransfer.types) {
-          for (let i = 0; i < e.dataTransfer.types.length; i++) {
-            const type = e.dataTransfer.types[i]
-            try {
-              console.info(`Type: ${type}, Data: ${e.dataTransfer.getData(type)}`)
-            } catch (err) {
-              console.info(`Type: ${type}, could not get data`)
-            }
-          }
-        }
-        const pathFromData = e.dataTransfer.getData('FileNameW') || e.dataTransfer.getData('FileName')
+        console.info('Path from DataTransfer candidate:', pathFromData)
+
         if (e.dataTransfer.files && e.dataTransfer.files.length) {
           for (let i = 0; i < e.dataTransfer.files.length; i++) {
             const file = e.dataTransfer.files[i]
             if (!file.path && pathFromData && e.dataTransfer.files.length === 1) {
-              console.info('Recovering path from DataTransfer:', pathFromData)
+              console.info('Recovering path for file:', pathFromData)
               file.path = pathFromData
             }
             files.push(file)
           }
         } else if (e.dataTransfer.items && e.dataTransfer.items.length) {
-          console.info('items length', e.dataTransfer.items.length)
+          console.info('Using items fallback, length:', e.dataTransfer.items.length)
           for (let i = 0; i < e.dataTransfer.items.length; i++) {
             const item = e.dataTransfer.items[i]
             if (item.kind === 'file') {
               const file = item.getAsFile()
               if (file) {
                 if (!file.path && pathFromData && e.dataTransfer.items.length === 1) {
-                  console.info('Recovering path from DataTransfer (items):', pathFromData)
+                  console.info('Recovering path for item:', pathFromData)
                   file.path = pathFromData
                 }
                 files.push(file)
@@ -111,13 +102,6 @@
         if (!files.length) {
           console.warn('No files dropped')
           return
-        }
-        if (e.dataTransfer.items && e.dataTransfer.items.length) {
-          console.info('items length', e.dataTransfer.items.length)
-          for (let i = 0; i < e.dataTransfer.items.length; i++) {
-            const item = e.dataTransfer.items[i]
-            console.info(`item[${i}] kind: ${item.kind}, type: ${item.type}`)
-          }
         }
         console.log('Dropped:', files.map(f => `${f.name} (path: ${f.path})`))
         await this.handleFiles(files)
@@ -137,14 +121,7 @@
         })
         const firstPath = fileObjects[0].path
         const isFolderCheck = (filePath) => {
-          try {
-            if (!filePath) return false
-            if (!fileHelper.isExist(filePath)) return false
-            return fileHelper.isFolder(filePath)
-          } catch (e) {
-            console.error('[isFolderCheck] failed:', filePath, e)
-            return false
-          }
+          return fileHelper.isFolder(filePath)
         }
         let isFolder = isFolderCheck(firstPath)
         console.info('isFolder', isFolder, 'firstPath', firstPath)
