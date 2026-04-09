@@ -201,7 +201,9 @@ export default {
       })
       if (files.length <= 0) return null
       const fileInfo = await this.$file.getDeviceInfo(files[0])
-      this.recorderType = fileInfo.recorderType
+      if (fileInfo) {
+        this.recorderType = fileInfo.recorderType
+      }
 
       return fileInfo
     },

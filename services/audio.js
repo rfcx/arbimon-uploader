@@ -82,15 +82,31 @@ const identify = (sourceFile) => {
     ffmpeg(sourceFile)
       .ffprobe(0, function (err, result) {
         if (err) {
-          console.log('identify err', err)
+          console.error('[Audio] identify error for:', sourceFile, err)
           reject(err)
         } else {
-          const format = result.format && result.format.format_name ? result.format.format_name : undefined
-          const duration = result.format && parseFloat(result.format.duration)
-          const tags = result.format.tags
-          const artist = tags && tags.artist
-          const comment = tags && tags.comment
-          resolve({ format, duration, comment, artist })
+          try {
+            const format = result.format && result.format.format_name ? result.format.format_name : undefined
+            let duration = result.format && parseFloat(result.format.duration)
+
+            // Fallback for duration if format.duration is missing/NaN
+            if ((!duration || isNaN(duration)) && result.streams && result.streams[0]) {
+              duration = parseFloat(result.streams[0].duration)
+            }
+
+            const tags = result.format.tags
+            const artist = tags && tags.artist
+            const comment = tags && tags.comment
+
+            if (!duration || isNaN(duration)) {
+              console.warn('[Audio] No duration found for:', sourceFile, JSON.stringify(result.format))
+            }
+
+            resolve({ format, duration, comment, artist })
+          } catch (e) {
+            console.error('[Audio] Error parsing ffprobe result:', e)
+            reject(e)
+          }
         }
       })
   })

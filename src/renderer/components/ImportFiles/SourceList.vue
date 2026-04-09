@@ -26,14 +26,14 @@
       <img class="row__icon" src="@/assets/ic-folder-empty.svg" v-else/>
       <span class="row__source-title" :class="{'default': defaultState}" v-if="selectedFolder.path">{{ selectedFolder.path }}</span>
       <span class="row__folder-button" :class="{'default': defaultState}" v-else>Choose a folder</span>
-      <RecorderTag :show="selectedFolder.deviceId" :isSelected="(isSelected('folder') || defaultState)" :type="selectedFolder.recorderType"/>
+      <RecorderTag :show="selectedFolder && selectedFolder.deviceId" :isSelected="(isSelected('folder') || defaultState)" :type="selectedFolder ? selectedFolder.recorderType : null"/>
     </tr>
     <tr @click="onClickChooseFiles" :class="{'selected':  isSelected('file') }">
       <img class="row__icon" src="@/assets/ic-file-white.svg" v-if="isSelected('file') || defaultState"/>
       <img class="row__icon" src="@/assets/ic-file.svg" v-else/>
       <span class="row__source-title" :class="{'default': defaultState}" v-if="numberOfSelectedFiles > 0">{{ numberOfSelectedFiles + ' files selected' }}</span>
       <span class="row__folder-button" :class="{'default': defaultState}" v-else>Choose files</span>
-      <RecorderTag :show="isSelected('file') && selectedSource.deviceId" :isSelected="(isSelected('file') || defaultState)" :type="selectedSource.recorderType"/>
+      <RecorderTag :show="isSelected('file') && selectedSource && selectedSource.deviceId" :isSelected="(isSelected('file') || defaultState)" :type="selectedSource ? selectedSource.recorderType : null"/>
     </tr>
     </template>
   </table>
