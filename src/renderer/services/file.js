@@ -20,6 +20,7 @@ const { PREPARING, ERROR_LOCAL, ERROR_SERVER, WAITING, PROCESSING, CONVERTING, C
 const FORMAT_AUTO_DETECT = FileFormat.fileFormat.AUTO_DETECT
 const analytics = createAnalytics(env.analytics.id)
 const PROJECT_DURATION_LIMIT_EXCEEDED_MESSAGE = 'Project recording-minute limit exceeded. This file cannot be uploaded because the project has reached its recording limit.'
+const PROJECT_VIEW_ONLY_MESSAGE = 'Project is view-only and cannot accept uploads. Upgrade or reactivate the project in Arbimon before uploading more recordings.'
 
 const extractSongMeterFileInfo = async (file) => {
   if (file.extension !== 'wav') return new SongMeterFileInfo('')
@@ -141,7 +142,8 @@ class FileProvider {
     return fileObjects
   }
   async updateFilesDuration (files) {
-    for (const file of files) {
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
       try {
         const durationInSecond = await fileHelper.getFileDuration(file.path)
         await ipcRendererSend('db.files.update', `db.files.update.${Date.now()}`, {
@@ -169,7 +171,8 @@ class FileProvider {
     // if there is an active session id then reuse that, otherwise generate a new one
     const sessionId = store.state.AppSetting.currentUploadingSessionId || '_' + Math.random().toString(36).substr(2, 9)
     store.dispatch('setCurrentUploadingSessionId', sessionId)
-    for (const file of files) {
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
       await ipcRendererSend('db.files.update', `db.files.update.${file.id}.${Date.now()}`, {
         id: file.id,
         params: { state: WAITING, stateMessage: null, sessionId: sessionId }
@@ -216,7 +219,8 @@ class FileProvider {
     }))
     const t1 = performance.now()
     console.info('[FileService] ⏱ finish forming objects ' + (t1 - t0) + ' ms')
-    for (let file of updatedFiles) {
+    for (let i = 0; i < updatedFiles.length; i++) {
+      const file = updatedFiles[i]
       await ipcRendererSend('db.files.update', `db.files.update.${file.id}.${Date.now()}`, {
         id: file.id,
         params: {
@@ -408,6 +412,9 @@ class FileProvider {
         if (error.message.includes('Project recording-minute limit exceeded')) {
           return this.markFileAsFailed(file, PROJECT_DURATION_LIMIT_EXCEEDED_MESSAGE)
         }
+        if (error.message.includes('Project is view-only and cannot accept uploads')) {
+          return this.markFileAsFailed(file, PROJECT_VIEW_ONLY_MESSAGE)
+        }
         return this.markFileAsFailed(file, error.message)
       }
 
@@ -547,7 +554,8 @@ class FileProvider {
   async searchFilesFromFolder (folderPath) {
     const searchPaths = ['.']
     const files = []
-    for (const searchPath of searchPaths) {
+    for (let i = 0; i < searchPaths.length; i++) {
+      const searchPath = searchPaths[i]
       const pa = path.join(folderPath, searchPath)
       files.push(...fileHelper.getFilesFromDirectoryPath(pa, true))
     }
@@ -558,7 +566,8 @@ class FileProvider {
     const files = await this.searchFilesFromFolder(folder)
     if (!files || files.length <= 0) { return null }
     // First wav file with duration
-    for (let file of files) {
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
       if (dateHelper.getYear(file.name) > 1971 && fileHelper.getExtension(file.path) === 'wav' && fileHelper.getExtension(file.path) === 'wav' && await fileHelper.getFileDuration(file.path).catch(() => false)) {
         return this.getDeviceInfo(file)
       }

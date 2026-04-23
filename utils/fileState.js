@@ -14,11 +14,14 @@ const preparedGroup = [state.PREPARING, state.ERROR_LOCAL]
 const queuedGroup = [state.WAITING, state.UPLOADING, state.CONVERTING]
 const completedGroup = [state.COMPLETED, state.PROCESSING, state.ERROR_SERVER]
 
-const cannotRedoGroup = ['duplicate', 'corrupt', 'duration', 'project recording-minute limit exceeded']
+const cannotRedoGroup = ['duplicate', 'corrupt', 'duration', 'project recording-minute limit exceeded', 'project is view-only and cannot accept uploads']
 
 const mapPossibleStatesWithId = function () {
   let stateObject = {}
-  for (const [key, id] of Object.entries(state)) {
+  const keys = Object.keys(state)
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[i]
+    const id = state[key]
     switch (key) {
       case 'ERROR_LOCAL':
         stateObject[`${id}`] = ['local_error']
