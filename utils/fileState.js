@@ -14,7 +14,7 @@ const preparedGroup = [state.PREPARING, state.ERROR_LOCAL]
 const queuedGroup = [state.WAITING, state.UPLOADING, state.CONVERTING]
 const completedGroup = [state.COMPLETED, state.PROCESSING, state.ERROR_SERVER]
 
-const cannotRedoGroup = ['duplicate', 'corrupt', 'duration']
+const cannotRedoGroup = ['duplicate', 'corrupt', 'duration', 'project recording-minute limit exceeded']
 
 const mapPossibleStatesWithId = function () {
   let stateObject = {}

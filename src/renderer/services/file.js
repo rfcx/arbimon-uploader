@@ -19,6 +19,7 @@ const { PREPARING, ERROR_LOCAL, ERROR_SERVER, WAITING, PROCESSING, CONVERTING, C
 
 const FORMAT_AUTO_DETECT = FileFormat.fileFormat.AUTO_DETECT
 const analytics = createAnalytics(env.analytics.id)
+const PROJECT_DURATION_LIMIT_EXCEEDED_MESSAGE = 'Project recording-minute limit exceeded. This file cannot be uploaded because the project has reached its recording limit.'
 
 const extractSongMeterFileInfo = async (file) => {
   if (file.extension !== 'wav') return new SongMeterFileInfo('')
@@ -393,7 +394,7 @@ class FileProvider {
       }
 
       // should not retry
-      const shouldNotAutoRetry = ['Invalid.', 'Request body larger than maxBodyLength limit'].includes(error.message) || ['ForbiddenError'].includes(error.name) || error.message.includes('Future date') || error.message.includes('Validation errors')
+      const shouldNotAutoRetry = ['Invalid.', 'Request body larger than maxBodyLength limit'].includes(error.message) || ['ForbiddenError', 'ValidationError'].includes(error.name) || error.message.includes('Future date') || error.message.includes('Validation errors')
       if (shouldNotAutoRetry) {
         if (error.message === 'Invalid.') { // (same site, same file data, different filename)
           return this.markFileAsFailed(file, 'Duplicate file. Matching sha1 signature already ingested.')
@@ -403,6 +404,9 @@ class FileProvider {
         }
         if (error.message.includes('Future date')) {
           return this.markFileAsFailed(file, 'Filename with future date is not permitted.')
+        }
+        if (error.message.includes('Project recording-minute limit exceeded')) {
+          return this.markFileAsFailed(file, PROJECT_DURATION_LIMIT_EXCEEDED_MESSAGE)
         }
         return this.markFileAsFailed(file, error.message)
       }
